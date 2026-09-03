@@ -23,24 +23,28 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://teamplanning:teamplanning@db:5432/teamplanning
       SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
-      CORS_ORIGINS: '["http://localhost:3000"]'
+      CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:3000"]}'
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@teamplanning.nl}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
       TEAM_ACCESS_PASSWORD: ${TEAM_ACCESS_PASSWORD:-degouv}
       TEAMBEHEER_AUTO_SYNC: ${TEAMBEHEER_AUTO_SYNC:-true}
       TEAMBEHEER_SYNC_HOUR: ${TEAMBEHEER_SYNC_HOUR:-3}
       TEAMBEHEER_SYNC_MINUTE: ${TEAMBEHEER_SYNC_MINUTE:-30}
-    ports:
-      - "8000:8000"
+    # Geen ports hier: alleen frontend praat met de backend, over het interne
+    # Docker-netwerk (http://backend:8000). Niets van de backend hoeft
+    # rechtstreeks vanaf het internet bereikbaar te zijn.
 
   frontend:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
     restart: unless-stopped
     depends_on:
       - backend
+    environment:
+      # Server-side proxy-doel voor /api, zie frontend/next.config.mjs.
+      BACKEND_INTERNAL_URL: http://backend:8000
     ports:
       - "3000:3000"
 

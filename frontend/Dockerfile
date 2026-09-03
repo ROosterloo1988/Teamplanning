@@ -7,7 +7,9 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ARG NEXT_PUBLIC_API_URL=http://localhost:8000/api
+# Relatief pad: de browser praat alleen met dit eigen origin, Next.js
+# proxyt /api server-side naar BACKEND_INTERNAL_URL (zie next.config.mjs).
+ARG NEXT_PUBLIC_API_URL=/api
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
