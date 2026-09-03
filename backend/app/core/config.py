@@ -11,7 +11,12 @@ class Settings(BaseSettings):
 
     SECRET_KEY: str = "change-me-in-production"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    TEAM_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 90  # 90 dagen: alleen een "voordeur", geen echte login
     ALGORITHM: str = "HS256"
+
+    # Gedeeld teamwachtwoord voor de naam-kiezer (bootstrap-waarde, zie
+    # app.initial_data — wijzigbaar via Beheer > Instellingen).
+    TEAM_ACCESS_PASSWORD: str = "degouv"
 
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
 

@@ -56,6 +56,18 @@ een team-wisselaar) is een leuke uitbreiding voor later, maar niet nodig op
 dit moment — de app werkt voorlopig voor één team, nu met seizoenen
 erbovenop.
 
+**Inloggen** (vervangt het oorspronkelijke e-mail/wachtwoord-scherm):
+
+- Eerst een gedeeld **teamwachtwoord** (voorkomt dat buitenstaanders de
+  namenlijst kunnen zien), daarna **"Ik ben: [naam]"** — spelers loggen
+  meteen in door hun naam te kiezen, geen wachtwoord nodig.
+- Captain- en beheeraccounts (🔒 in de lijst) vragen daarbij om hun
+  persoonlijke **ontgrendelwachtwoord**, ingesteld per account via
+  **Beheer → Spelers**. Het teamwachtwoord zelf is wijzigbaar via
+  **Beheer → Instellingen**.
+- Het teamwachtwoord blijft op het toestel onthouden (90 dagen); uitloggen
+  brengt je terug naar de naam-kiezer, niet naar het teamwachtwoord-scherm.
+
 ## Techniek
 
 - **Backend**: FastAPI + SQLAlchemy + Alembic, PostgreSQL
@@ -72,10 +84,12 @@ docker compose up --build
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000/api (docs op `/docs`)
 
-Bij de eerste start maakt de backend automatisch een beheerder-account aan met
-de gegevens uit `.env` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`, standaard
-`admin@teamplanning.nl` / `changeme`). Log daarmee in en maak via
-**Beheer → Spelers** de echte spelersaccounts aan.
+Bij de eerste start maakt de backend automatisch een beheerder-account aan
+(`ADMIN_EMAIL` / `ADMIN_PASSWORD`, standaard `admin@teamplanning.nl` /
+`changeme` — dat wachtwoord is meteen ook het ontgrendelwachtwoord voor de
+naam-kiezer) en een teamwachtwoord (`TEAM_ACCESS_PASSWORD`, standaard
+`degouv`). Log in met het teamwachtwoord, kies "Beheerder" en ontgrendel met
+`ADMIN_PASSWORD`, en maak via **Beheer → Spelers** de echte accounts aan.
 
 ## Lokaal ontwikkelen zonder Docker
 

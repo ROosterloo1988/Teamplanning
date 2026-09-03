@@ -53,7 +53,7 @@ export default function BeheerSpelersPage() {
       await api.post("/players/with-account", {
         naam: form.naam,
         email: form.email,
-        password: form.password,
+        password: form.rol === "SPELER" ? undefined : form.password,
         rol: form.rol,
         team_id: form.team_id ? Number(form.team_id) : null,
       });
@@ -100,14 +100,6 @@ export default function BeheerSpelersPage() {
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           className="w-full rounded-lg border border-gray-300 px-3 py-2"
         />
-        <input
-          placeholder="Tijdelijk wachtwoord"
-          type="text"
-          required
-          value={form.password}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2"
-        />
         <select
           value={form.rol}
           onChange={(e) => setForm({ ...form, rol: e.target.value as UserRole })}
@@ -117,6 +109,20 @@ export default function BeheerSpelersPage() {
           <option value="CAPTAIN">Captain</option>
           <option value="BEHEER">Beheer</option>
         </select>
+        {form.rol === "SPELER" ? (
+          <p className="text-sm text-gray-500">
+            🏓 Speler logt in door zijn naam te kiezen op het inlogscherm — geen wachtwoord nodig.
+          </p>
+        ) : (
+          <input
+            placeholder="Ontgrendelwachtwoord"
+            type="text"
+            required
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2"
+          />
+        )}
         <select
           value={form.team_id}
           onChange={(e) => setForm({ ...form, team_id: e.target.value })}

@@ -27,6 +27,9 @@ export function BeheerNav() {
       <Link href="/beheer/statistieken" className="hover:text-brand">
         Statistieken
       </Link>
+      <Link href="/beheer/instellingen" className="hover:text-brand">
+        Instellingen
+      </Link>
     </div>
   );
 }
