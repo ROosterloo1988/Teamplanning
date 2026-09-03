@@ -10,3 +10,4 @@ from app.models.availability import Availability  # noqa: F401
 from app.models.lineup import Lineup, LineupPlayer  # noqa: F401
 from app.models.audit_log import AuditLog  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
+from app.models.teambeheer import TeambeheerConfig  # noqa: F401

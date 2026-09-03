@@ -15,6 +15,9 @@ export function BeheerNav() {
       <Link href="/beheer/seizoenen" className="hover:text-brand">
         Seizoenen
       </Link>
+      <Link href="/beheer/teambeheer" className="hover:text-brand">
+        Teambeheer
+      </Link>
       <Link href="/beheer/import" className="hover:text-brand">
         Excel importeren
       </Link>

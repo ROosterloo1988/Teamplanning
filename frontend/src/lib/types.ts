@@ -119,3 +119,34 @@ export interface NotificationOut {
   created_at: string;
   read_at: string | null;
 }
+
+export interface TeambeheerConfigOut {
+  id: number;
+  season_id: number;
+  bond_id: number;
+  poule: string;
+  team_id: number;
+  team_naam: string | null;
+  last_synced_at: string | null;
+  last_sync_status: string | null;
+  last_sync_message: string | null;
+}
+
+export type TeambeheerFixtureStatus = "nieuw" | "bestaand" | "geen_datum";
+
+export interface TeambeheerFixturePreview {
+  speelweek: number;
+  datum: string | null;
+  datum_raw: string;
+  thuisteam: string;
+  uitteam: string;
+  status: TeambeheerFixtureStatus;
+}
+
+export interface TeambeheerSyncResult {
+  created: number;
+  updated: number;
+  unchanged: number;
+  skipped_no_date: number;
+  team_naam: string | null;
+}

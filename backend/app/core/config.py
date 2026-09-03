@@ -19,5 +19,11 @@ class Settings(BaseSettings):
     # functioneel ontwerp v1 sectie 11.
     REMINDER_DAYS_BEFORE: int = 3
 
+    # Teambeheer SDC jaarprogramma-feed (ontwerp secties 6 en 7).
+    TEAMBEHEER_BASE_URL: str = "https://feeds.teambeheer.nl"
+    TEAMBEHEER_AUTO_SYNC: bool = True
+    TEAMBEHEER_SYNC_HOUR: int = 3
+    TEAMBEHEER_SYNC_MINUTE: int = 30
+
 
 settings = Settings()

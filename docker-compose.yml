@@ -26,6 +26,9 @@ services:
       CORS_ORIGINS: '["http://localhost:3000"]'
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@teamplanning.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
+      TEAMBEHEER_AUTO_SYNC: ${TEAMBEHEER_AUTO_SYNC:-true}
+      TEAMBEHEER_SYNC_HOUR: ${TEAMBEHEER_SYNC_HOUR:-3}
+      TEAMBEHEER_SYNC_MINUTE: ${TEAMBEHEER_SYNC_MINUTE:-30}
     ports:
       - "8000:8000"
 

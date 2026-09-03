@@ -40,10 +40,20 @@ bewust nog niet gebouwd, zie hieronder):
 - **PWA**: de app heeft een manifest en iconen zodat spelers hem op hun
   telefoon kunnen "installeren" (add to home screen).
 
-Automatische Teambeheer-sync en Excel-verschilcontrole (fase 2) blijven
-bewust uitgesteld. Volledige multi-team ondersteuning (meerdere teams met
-gescheiden spelers/captains/wedstrijden en een team-wisselaar) is nog niet
-gebouwd — de app werkt voorlopig voor één team, nu met seizoenen erbovenop.
+**Teambeheer-synchronisatie** (ontwerp secties 6 en 7):
+
+- **Beheer → Teambeheer** koppelt een seizoen aan de Teambeheer SDC
+  jaarprogramma-feed (bond, poule, teamnummer), met een "Wedstrijden
+  ophalen"-preview (nieuw/bestaand/nog geen datum) en een
+  "Wedstrijden importeren"-knop.
+- Een ingebouwde nachtelijke achtergrondtaak doet dit automatisch voor elk
+  gekoppeld seizoen en meldt nieuwe of gewijzigde wedstrijden via het
+  notificatiecentrum — uit te zetten met `TEAMBEHEER_AUTO_SYNC=false`.
+
+Excel-verschilcontrole (fase 2) blijft bewust uitgesteld. Volledige
+multi-team ondersteuning (meerdere teams met gescheiden
+spelers/captains/wedstrijden en een team-wisselaar) is nog niet gebouwd — de
+app werkt voorlopig voor één team, nu met seizoenen erbovenop.
 
 ## Techniek
 
@@ -110,18 +120,46 @@ gevolgd door één kolom per speler. Celwaarden worden als volgt omgezet
 Een wedstrijdnummer dat begint met `B` wordt als **Beker** geïmporteerd, met
 `I` als **Inhaal**, en anders als **Competitie** (ontwerp sectie 5).
 
+## Teambeheer synchroniseren
+
+Ga naar **Beheer → Teambeheer**, kies het seizoen en vul in:
+
+- **Bond** (`d=` in de feed-URL, bv. `11` voor SDC)
+- **Poule** (`div=`, bv. `1A`)
+- **Teamnummer** (`t=` uit de team-URL van je eigen team, bv.
+  `https://feeds.teambeheer.nl/web/team?d=11&t=3852&s=26-27` → `3852`)
+
+De app haalt daarmee `https://feeds.teambeheer.nl/web/jaarprogramma?d=<bond>&s=<seizoen>&div=<poule>`
+op — een HTML-pagina, geen API — en parst per speelweek de tabel met datum,
+thuisteam en uitteam. Alleen wedstrijden waarin het opgegeven teamnummer
+voorkomt (thuis of uit) worden geïmporteerd. Het seizoen (`s=`) wordt
+afgeleid van het gekozen seizoen (`startjaar`-`eindjaar`, bv. 2026 → `26-27`).
+Een datum die nog als `n.n.b.` op de feed staat, wordt overgeslagen tot een
+latere sync er een echte datum voor heeft — dat telt mee als "nog zonder
+datum" in het importresultaat.
+
+`Beheer → Teambeheer` laat je eerst preview'en (nieuw/bestaand/nog geen
+datum) voordat je importeert. Daarnaast draait er een ingebouwde nachtelijke
+achtergrondtaak (standaard 03:30 UTC, `TEAMBEHEER_SYNC_HOUR` /
+`TEAMBEHEER_SYNC_MINUTE`) die dit automatisch doet voor elk seizoen met een
+koppeling, en spelers een melding stuurt bij een nieuwe of gewijzigde
+wedstrijd. Zet `TEAMBEHEER_AUTO_SYNC=false` om dat uit te schakelen.
+
+De parser is los van een live verbinding getest tegen een echte, opgeslagen
+Teambeheer-pagina (`backend/tests/fixtures/`) — zie `backend/tests/`
+(`pip install -r requirements-dev.txt && pytest`).
+
 ## Databaseschema
 
 Zie `backend/app/models/` en de Alembic-migraties
 (`backend/alembic/versions/`) voor het schema: `users`, `players`, `teams`,
 `seasons` (met `actief`-vlag), `competitions`, `matches`, `availability`,
 `lineups`, `lineup_players`, `audit_log` (wijzigingsgeschiedenis, ontwerp
-sectie 10) en `notifications` (in-app notificatiecentrum, fase 3).
+sectie 10), `notifications` (in-app notificatiecentrum, fase 3) en
+`teambeheer_configs` (Teambeheer-koppeling per seizoen).
 
 ## Nog niet gebouwd
 
-- Automatische nachtelijke synchronisatie met de Teambeheer-feed (fase 2,
-  bewust uitgesteld — de feedstructuur is nog niet technisch geïnspecteerd)
 - Excel-verschilcontrole ("Excel overnemen" / "App behouden", fase 2, bewust
   uitgesteld)
 - Herinneringen en notificaties via e-mail of push (alleen in-app)
