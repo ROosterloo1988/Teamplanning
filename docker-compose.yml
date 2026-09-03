@@ -24,7 +24,7 @@ services:
       DATABASE_URL: postgresql+psycopg2://teamplanning:teamplanning@db:5432/teamplanning
       SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
       CORS_ORIGINS: '["http://localhost:3000"]'
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@teamplanning.local}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@teamplanning.nl}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
       TEAMBEHEER_AUTO_SYNC: ${TEAMBEHEER_AUTO_SYNC:-true}
       TEAMBEHEER_SYNC_HOUR: ${TEAMBEHEER_SYNC_HOUR:-3}

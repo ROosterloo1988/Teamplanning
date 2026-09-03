@@ -2,13 +2,18 @@
 import os
 
 from app.core.security import hash_password
+
+# Importeer via app.db.base (niet app.models.user) zodat alle modellen
+# geregistreerd zijn voor SQLAlchemy's mappers — User.player verwijst naar
+# Player via een stringnaam die anders onopgelost blijft in dit losstaande
+# script.
+from app.db.base import User
 from app.db.session import SessionLocal
 from app.models.enums import UserRole
-from app.models.user import User
 
 
 def main() -> None:
-    email = os.environ.get("ADMIN_EMAIL", "admin@teamplanning.local")
+    email = os.environ.get("ADMIN_EMAIL", "admin@teamplanning.nl")
     password = os.environ.get("ADMIN_PASSWORD", "changeme")
     naam = os.environ.get("ADMIN_NAAM", "Beheerder")
 

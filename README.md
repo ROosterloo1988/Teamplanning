@@ -74,7 +74,7 @@ docker compose up --build
 
 Bij de eerste start maakt de backend automatisch een beheerder-account aan met
 de gegevens uit `.env` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`, standaard
-`admin@teamplanning.local` / `changeme`). Log daarmee in en maak via
+`admin@teamplanning.nl` / `changeme`). Log daarmee in en maak via
 **Beheer → Spelers** de echte spelersaccounts aan.
 
 ## Lokaal ontwikkelen zonder Docker
