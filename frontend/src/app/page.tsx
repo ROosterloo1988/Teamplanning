@@ -19,7 +19,7 @@ export default function HomePage() {
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center text-gray-400">
-      🏓 Laden...
+      🎯 Laden...
     </div>
   );
 }

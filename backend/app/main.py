@@ -18,7 +18,14 @@ from app.api.routes import (
     teams,
 )
 from app.core.config import settings
-from app.services.scheduler import start_scheduler, stop_scheduler
+
+# Zorgt dat alle modellen bij startup geregistreerd zijn bij SQLAlchemy's
+# mapper-registry — anders faalt een relationship() naar een model dat geen
+# enkele routemodule zelf importeert (bv. Season.competitions -> Competition,
+# waarvoor geen route bestaat) pas bij de eerste query die de mapper
+# configureert, in plaats van meteen bij het opstarten.
+import app.db.base  # noqa: F401,E402
+from app.services.scheduler import start_scheduler, stop_scheduler  # noqa: E402
 
 
 @asynccontextmanager

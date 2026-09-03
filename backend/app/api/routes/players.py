@@ -1,9 +1,12 @@
+import secrets
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_beheer
 from app.core.security import hash_password
 from app.db.session import get_db
+from app.models.enums import UserRole
 from app.models.player import Player
 from app.models.user import User
 from app.schemas.player import PlayerCreate, PlayerOut
@@ -32,10 +35,22 @@ def create_player_with_account(payload: UserCreate, db: Session = Depends(get_db
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="E-mailadres al in gebruik")
 
+    if payload.rol in (UserRole.CAPTAIN, UserRole.BEHEER):
+        if not payload.password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Ontgrendelwachtwoord is verplicht voor captain/beheer",
+            )
+        password = payload.password
+    else:
+        # Speler logt in door op zijn naam te klikken; dit wachtwoord wordt
+        # nooit gebruikt, maar de kolom staat niet leeg toe.
+        password = payload.password or secrets.token_urlsafe(24)
+
     user = User(
         naam=payload.naam,
         email=payload.email,
-        hashed_password=hash_password(payload.password),
+        hashed_password=hash_password(password),
         rol=payload.rol,
         actief=payload.actief,
     )

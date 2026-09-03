@@ -37,7 +37,7 @@ export default function BeheerDashboardPage() {
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
       <div className="grid grid-cols-2 gap-4">
         <StatCard label="👥 Spelers" value={stats.spelers} />
-        <StatCard label="🏓 Wedstrijden" value={stats.wedstrijden} />
+        <StatCard label="🎯 Wedstrijden" value={stats.wedstrijden} />
         <StatCard label="🟢 Compleet ingevuld" value={stats.wedstrijden_compleet} />
         <StatCard label="⚠️ Missen antwoorden" value={stats.wedstrijden_missen_antwoorden} />
       </div>

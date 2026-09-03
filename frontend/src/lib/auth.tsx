@@ -2,13 +2,13 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { api, clearToken, setToken as storeToken } from "./api";
+import { api, clearToken, setToken as storeToken, teamApi } from "./api";
 import { UserOut } from "./types";
 
 interface AuthContextValue {
   user: UserOut | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  enter: (userId: number, unlockPassword?: string) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
 }
@@ -36,20 +36,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function login(email: string, password: string) {
-    const token = await api.post<{ access_token: string }>("/auth/login", { email, password });
+  async function enter(userId: number, unlockPassword?: string) {
+    const token = await teamApi.post<{ access_token: string }>("/auth/enter", {
+      user_id: userId,
+      unlock_password: unlockPassword,
+    });
     storeToken(token.access_token);
     await refresh();
   }
 
   function logout() {
+    // Alleen het persoonlijke token wissen: het teamtoken (voorbij de
+    // gedeelde teamwachtwoord-poort) blijft geldig op dit toestel, zodat je
+    // direct terugkomt bij de naam-kiezer in plaats van opnieuw het
+    // teamwachtwoord te moeten intypen.
     clearToken();
     setUser(null);
     router.push("/login");
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, enter, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

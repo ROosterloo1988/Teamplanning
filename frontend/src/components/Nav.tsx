@@ -12,7 +12,7 @@ export function Nav() {
     <nav className="mb-6 flex items-center justify-between border-b border-gray-200 pb-3">
       <div className="flex gap-4 text-sm font-medium">
         <Link href="/speler" className="hover:text-brand">
-          🏓 Speler
+          🎯 Speler
         </Link>
         {(user.rol === "CAPTAIN" || user.rol === "BEHEER") && (
           <Link href="/captain" className="hover:text-brand">

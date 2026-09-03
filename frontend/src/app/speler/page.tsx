@@ -69,7 +69,7 @@ export default function SpelerPage() {
   }
 
   if (loading || fetching) {
-    return <div className="py-10 text-center text-gray-400">🏓 Laden...</div>;
+    return <div className="py-10 text-center text-gray-400">🎯 Laden...</div>;
   }
 
   const next = rows[0];
@@ -83,14 +83,14 @@ export default function SpelerPage() {
   return (
     <div>
       <Nav />
-      <h1 className="mb-1 text-2xl font-bold">🏓 De Gouv</h1>
+      <h1 className="mb-1 text-2xl font-bold">🎯 De Gouv</h1>
       <p className="mb-6 text-gray-500">Welkom {user?.naam}</p>
 
       {!next && <p className="text-gray-500">Geen aankomende wedstrijden gepland.</p>}
 
       {showReminder && (
         <div className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-          🏓 Je hebt je beschikbaarheid voor{" "}
+          🎯 Je hebt je beschikbaarheid voor{" "}
           <span className="font-medium">{formatMatchDate(next.match.datum)}</span> nog niet ingevuld.
         </div>
       )}
@@ -108,7 +108,7 @@ export default function SpelerPage() {
 
           {lineup && (
             <div className="mt-4 rounded-lg bg-green-50 p-3 text-sm">
-              <p className="mb-1 font-medium text-green-800">🏓 Opstelling bekend</p>
+              <p className="mb-1 font-medium text-green-800">🎯 Opstelling bekend</p>
               <p className="text-green-700">
                 {lineup.player_ids.length} speler{lineup.player_ids.length === 1 ? "" : "s"} opgesteld
               </p>

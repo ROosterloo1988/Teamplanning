@@ -5,6 +5,12 @@ export type AvailabilityStatus = "AVAILABLE" | "UNAVAILABLE" | "IF_NEEDED" | "NO
 export type MatchType = "COMPETITIE" | "BEKER" | "INHAAL" | "OVERIG";
 export type MatchStatus = "GEPLAND" | "GESPEELD" | "AFGELAST";
 
+export interface AccountOption {
+  id: number;
+  naam: string;
+  rol: UserRole;
+}
+
 export interface UserOut {
   id: number;
   naam: string;

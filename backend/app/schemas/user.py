@@ -11,7 +11,10 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str
+    # Alleen verplicht voor CAPTAIN/BEHEER: het ontgrendelwachtwoord voor de
+    # naam-kiezer. Voor SPELER wordt er (ongebruikt) automatisch een
+    # gegenereerd, want die logt puur in door op zijn naam te klikken.
+    password: str | None = None
     team_id: int | None = None
 
 

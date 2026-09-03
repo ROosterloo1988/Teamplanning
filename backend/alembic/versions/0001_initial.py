@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import ENUM
 
 # revision identifiers, used by Alembic.
 revision: str = "0001"
@@ -16,11 +17,24 @@ down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-user_role = sa.Enum("SPELER", "CAPTAIN", "BEHEER", name="userrole")
-match_type = sa.Enum("COMPETITIE", "BEKER", "INHAAL", "OVERIG", name="matchtype")
-match_status = sa.Enum("GEPLAND", "GESPEELD", "AFGELAST", name="matchstatus")
-availability_status = sa.Enum(
-    "AVAILABLE", "UNAVAILABLE", "IF_NEEDED", "NO_RESPONSE", name="availabilitystatus"
+# create_type=False: de enum-types worden hieronder expliciet aangemaakt/
+# verwijderd (met checkfirst) zodat er precies één CREATE TYPE per naam
+# gebeurt. Zonder create_type=False emit SQLAlchemy zelf óók een CREATE
+# TYPE per kolom die de enum gebruikt, wat botst met de eigen aanmaak.
+# Let op: dit moet de dialect-specifieke postgresql.ENUM zijn — de
+# generieke sa.Enum() negeert create_type stilletjes.
+user_role = ENUM("SPELER", "CAPTAIN", "BEHEER", name="userrole", create_type=False)
+match_type = ENUM(
+    "COMPETITIE", "BEKER", "INHAAL", "OVERIG", name="matchtype", create_type=False
+)
+match_status = ENUM("GEPLAND", "GESPEELD", "AFGELAST", name="matchstatus", create_type=False)
+availability_status = ENUM(
+    "AVAILABLE",
+    "UNAVAILABLE",
+    "IF_NEEDED",
+    "NO_RESPONSE",
+    name="availabilitystatus",
+    create_type=False,
 )
 
 

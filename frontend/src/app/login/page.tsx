@@ -1,69 +1,176 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { ApiError } from "@/lib/api";
+import { ApiError, api, getTeamToken, setTeamToken, teamApi } from "@/lib/api";
+import { AccountOption } from "@/lib/types";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { enter } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
+  // Stap 1: gedeeld teamwachtwoord (alleen nodig als dit toestel het nog
+  // niet eerder heeft ingevoerd).
+  const [checkingTeamToken, setCheckingTeamToken] = useState(true);
+  const [hasTeamAccess, setHasTeamAccess] = useState(false);
+  const [teamPassword, setTeamPassword] = useState("");
+  const [teamError, setTeamError] = useState<string | null>(null);
+  const [teamSubmitting, setTeamSubmitting] = useState(false);
+
+  // Stap 2: naam-kiezer.
+  const [accounts, setAccounts] = useState<AccountOption[] | null>(null);
+  const [selected, setSelected] = useState<AccountOption | null>(null);
+  const [unlockPassword, setUnlockPassword] = useState("");
+  const [enterError, setEnterError] = useState<string | null>(null);
+  const [entering, setEntering] = useState(false);
+
+  const loadAccounts = useCallback(async () => {
     try {
-      await login(email, password);
+      const data = await teamApi.get<AccountOption[]>("/auth/accounts");
+      setAccounts(data);
+      setHasTeamAccess(true);
+    } catch {
+      // Teamtoken ontbreekt, is verlopen, of ongeldig: terug naar stap 1.
+      setHasTeamAccess(false);
+    } finally {
+      setCheckingTeamToken(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (getTeamToken()) {
+      loadAccounts();
+    } else {
+      setCheckingTeamToken(false);
+    }
+  }, [loadAccounts]);
+
+  async function handleTeamSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setTeamError(null);
+    setTeamSubmitting(true);
+    try {
+      const token = await api.post<{ access_token: string }>("/auth/team-access", {
+        password: teamPassword,
+      });
+      setTeamToken(token.access_token);
+      setTeamPassword("");
+      await loadAccounts();
+    } catch (err) {
+      setTeamError(err instanceof ApiError ? err.message : "Inloggen mislukt");
+    } finally {
+      setTeamSubmitting(false);
+    }
+  }
+
+  function pickAccount(account: AccountOption) {
+    setEnterError(null);
+    setUnlockPassword("");
+    if (account.rol === "SPELER") {
+      void doEnter(account.id);
+    } else {
+      setSelected(account);
+    }
+  }
+
+  async function doEnter(userId: number, password?: string) {
+    setEnterError(null);
+    setEntering(true);
+    try {
+      await enter(userId, password);
       router.push("/speler");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Inloggen mislukt");
+      setEnterError(err instanceof ApiError ? err.message : "Inloggen mislukt");
     } finally {
-      setSubmitting(false);
+      setEntering(false);
     }
+  }
+
+  async function handleUnlockSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selected) return;
+    await doEnter(selected.id, unlockPassword);
+  }
+
+  if (checkingTeamToken) {
+    return <div className="py-10 text-center text-gray-400">🎯 Laden...</div>;
   }
 
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center">
-      <h1 className="mb-1 text-2xl font-bold">🏓 De Gouv</h1>
-      <p className="mb-6 text-gray-500">Log in om je beschikbaarheid door te geven</p>
+      <h1 className="mb-1 text-2xl font-bold">🎯 De Gouv</h1>
 
-      <form onSubmit={handleSubmit} className="w-full max-w-xs space-y-4">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">E-mailadres</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none"
-          />
+      {!hasTeamAccess && (
+        <>
+          <p className="mb-6 text-gray-500">Voer het teamwachtwoord in</p>
+          <form onSubmit={handleTeamSubmit} className="w-full max-w-xs space-y-4">
+            <input
+              type="password"
+              placeholder="Teamwachtwoord"
+              required
+              autoFocus
+              value={teamPassword}
+              onChange={(e) => setTeamPassword(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none"
+            />
+            {teamError && <p className="text-sm text-red-600">{teamError}</p>}
+            <button
+              type="submit"
+              disabled={teamSubmitting}
+              className="w-full rounded-lg bg-brand py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+            >
+              {teamSubmitting ? "Bezig..." : "Verder"}
+            </button>
+          </form>
+        </>
+      )}
+
+      {hasTeamAccess && !accounts && (
+        <p className="text-gray-400">Laden...</p>
+      )}
+
+      {hasTeamAccess && accounts && (
+        <div className="w-full max-w-xs">
+          <p className="mb-4 text-center text-gray-500">Ik ben:</p>
+          <ul className="space-y-2">
+            {accounts.map((account) => (
+              <li key={account.id}>
+                <button
+                  onClick={() => pickAccount(account)}
+                  disabled={entering}
+                  className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left font-medium hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {account.naam}
+                  {account.rol !== "SPELER" && <span aria-label="ontgrendelwachtwoord nodig">🔒</span>}
+                </button>
+
+                {selected?.id === account.id && (
+                  <form onSubmit={handleUnlockSubmit} className="mt-2 space-y-2 pl-1">
+                    <input
+                      type="password"
+                      placeholder="Ontgrendelwachtwoord"
+                      required
+                      autoFocus
+                      value={unlockPassword}
+                      onChange={(e) => setUnlockPassword(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      disabled={entering}
+                      className="w-full rounded-lg bg-brand py-1.5 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+                    >
+                      {entering ? "Bezig..." : "Ontgrendelen"}
+                    </button>
+                  </form>
+                )}
+              </li>
+            ))}
+          </ul>
+          {enterError && <p className="mt-3 text-center text-sm text-red-600">{enterError}</p>}
         </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Wachtwoord</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none"
-          />
-        </div>
-
-        {error && <p className="text-sm text-red-600">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-lg bg-brand py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50"
-        >
-          {submitting ? "Bezig..." : "Inloggen"}
-        </button>
-      </form>
+      )}
     </div>
   );
 }
