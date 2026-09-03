@@ -72,7 +72,12 @@ erbovenop.
 
 - **Backend**: FastAPI + SQLAlchemy + Alembic, PostgreSQL
 - **Frontend**: Next.js (App Router) + TypeScript + Tailwind CSS, mobile-first
-- **Infra**: Docker Compose (postgres, backend, frontend)
+- **Infra**: Docker Compose (postgres, backend, frontend). De frontend
+  proxyt `/api` server-side naar de backend (`frontend/next.config.mjs`), dus
+  naar buiten toe is er maar één poort (3000) — handig als SSL-terminatie/
+  reverse-proxy op een aparte server staat. Zie
+  `docs/deployment-ubuntu-26.04.md` voor een complete installatiehandleiding
+  (Ubuntu Server 26.04 LTS, minimized install).
 
 ## Snel starten met Docker
 
@@ -81,8 +86,10 @@ cp .env.example .env
 docker compose up --build
 ```
 
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000/api (docs op `/docs`)
+- App (frontend + de doorgeproxyde API): http://localhost:3000
+- Backend rechtstreeks (alleen als je poort 8000 zelf publiceert, bv. voor
+  lokaal ontwikkelen buiten Docker): http://localhost:8000/api (docs op
+  `/docs`)
 
 Bij de eerste start maakt de backend automatisch een beheerder-account aan
 (`ADMIN_EMAIL` / `ADMIN_PASSWORD`, standaard `admin@teamplanning.nl` /
