@@ -4,9 +4,12 @@
 
 De belangrijkste verandering:
 
-> **De webapp wordt de database. Excel wordt een gekoppelde/controleerbare bron.**
+> **De webapp wordt de database. Excel was ooit de bron, Teambeheer SDC is
+> dat nu.**
 
-De gegevens worden dus niet meer "in Excel" bijgehouden.
+De gegevens worden dus niet meer "in Excel" bijgehouden. Excel diende alleen
+nog als eenmalige migratiebron bij de start (sectie 15); een doorlopende
+Excel-verschilcontrole is geschrapt (sectie 8).
 
 ```text
                          ┌─────────────────┐
@@ -33,9 +36,6 @@ De gegevens worden dus niet meer "in Excel" bijgehouden.
                     │
                     ▼
               Beschikbaarheid
-
-                          ↕
-                   Excel controle
 ```
 
 ## 2. Spelerscherm
@@ -82,10 +82,14 @@ Beheer krijgt een scherm om wedstrijden op te halen uit Teambeheer SDC
 De app controleert periodiek Teambeheer en meldt nieuwe of gewijzigde
 wedstrijden.
 
-## 8. Excel-controle
+## 8. Excel-controle — *geschrapt*
 
-Extra beveiliging: de app vergelijkt periodiek app-data met de Excel-bron en
-toont verschillen, met de keuze "Excel overnemen" of "App behouden".
+~~Extra beveiliging: de app vergelijkt periodiek app-data met de Excel-bron
+en toont verschillen, met de keuze "Excel overnemen" of "App behouden".~~
+
+Niet meer gewenst: met de Teambeheer-sync (secties 6-7) als bron voor
+wedstrijden is een aparte Excel-vergelijking niet meer relevant. Dit
+onderdeel wordt niet gebouwd.
 
 ## 9. Database
 
@@ -136,15 +140,20 @@ nieuwe applicatie staat.
 - Beheer: spelers beheren, wedstrijden beheren, Excel importeren,
   Teambeheer importeren
 
-**Fase 2** — automatische Teambeheer-sync, Excel-verschilcontrole,
-wijzigingslog, herinneringen, betere statistieken.
+**Fase 2** — wijzigingslog, herinneringen, betere statistieken.
+(Excel-verschilcontrole is geschrapt, zie sectie 8.)
 
-**Fase 3** — meerdere teams/seizoenen, automatische notificaties,
-uitgebreide wedstrijdhistorie, eventueel PWA.
+**Fase 3** — seizoenen, automatische notificaties, uitgebreide
+wedstrijdhistorie, PWA. (Volledige multi-team ondersteuning is een leuke
+uitbreiding voor later, maar nu niet nodig.)
+
+**Teambeheer-sync** (secties 6-7) — handmatige import + nachtelijke
+automatische synchronisatie, gebouwd tegen de echte jaarprogramma-feed.
 
 ---
 
-*Opmerking: de Teambeheer-feed kon nog niet technisch geïnspecteerd worden.
-Advies was om eerst de MVP rond de bestaande Excel-data te bouwen en
+*Opmerking: de Teambeheer-feed kon aanvankelijk niet technisch geïnspecteerd
+worden. Advies was om eerst de MVP rond de bestaande Excel-data te bouwen en
 Teambeheer in een latere stap te koppelen — dat is ook hoe deze eerste versie
-is opgezet.*
+is opgezet. Inmiddels is de echte feed-structuur bekend en is de
+Teambeheer-sync (secties 6-7) gebouwd.*
