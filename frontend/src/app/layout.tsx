@@ -4,7 +4,7 @@ import { AuthProvider } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Teamplanning - De Gouv",
-  description: "Beschikbaarheid en opstelling voor tafeltennisteam De Gouv",
+  description: "Beschikbaarheid en opstelling voor dartteam De Gouv",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/favicon-32.png",

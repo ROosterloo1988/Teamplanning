@@ -111,7 +111,7 @@ export default function BeheerSpelersPage() {
         </select>
         {form.rol === "SPELER" ? (
           <p className="text-sm text-gray-500">
-            🏓 Speler logt in door zijn naam te kiezen op het inlogscherm — geen wachtwoord nodig.
+            🎯 Speler logt in door zijn naam te kiezen op het inlogscherm — geen wachtwoord nodig.
           </p>
         ) : (
           <input

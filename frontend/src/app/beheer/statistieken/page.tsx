@@ -83,7 +83,7 @@ export default function BeheerStatistiekenPage() {
               <span>🔴 Kan niet: {s.niet_beschikbaar}</span>
               <span>🟡 Indien nodig: {s.indien_nodig}</span>
               <span>⚪ Geen antwoord: {s.geen_antwoord}</span>
-              <span>🏓 Opgesteld: {s.keer_opgesteld}×</span>
+              <span>🎯 Opgesteld: {s.keer_opgesteld}×</span>
             </div>
           </div>
         ))}

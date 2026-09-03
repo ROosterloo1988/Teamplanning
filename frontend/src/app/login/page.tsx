@@ -94,12 +94,12 @@ export default function LoginPage() {
   }
 
   if (checkingTeamToken) {
-    return <div className="py-10 text-center text-gray-400">🏓 Laden...</div>;
+    return <div className="py-10 text-center text-gray-400">🎯 Laden...</div>;
   }
 
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center">
-      <h1 className="mb-1 text-2xl font-bold">🏓 De Gouv</h1>
+      <h1 className="mb-1 text-2xl font-bold">🎯 De Gouv</h1>
 
       {!hasTeamAccess && (
         <>

@@ -63,7 +63,7 @@ worden één-op-één geïmporteerd. Celwaarden worden genormaliseerd
 | `v` / `V` | 🟢 Kan          |
 | `x` / `X` | 🔴 Kan niet     |
 | `?`       | 🟡 Indien nodig |
-| `1`       | 🏓 Opgesteld    |
+| `1`       | 🎯 Opgesteld    |
 | leeg      | ⚪ Geen antwoord |
 
 ## 5. Wedstrijdsoorten
