@@ -10,17 +10,20 @@ from app.models.player import Player
 from app.models.user import User
 from app.schemas.lineup import LineupOut, LineupUpdate
 from app.services.audit import log_change
+from app.services.notifications import notify_all_players
 
 router = APIRouter(prefix="/lineups", tags=["lineups"])
 
 
 def _to_out(lineup: Lineup) -> LineupOut:
+    sorted_players = sorted(lineup.players, key=lambda lp: lp.player.naam)
     return LineupOut(
         id=lineup.id,
         match_id=lineup.match_id,
         published=lineup.published,
         published_at=lineup.published_at,
-        player_ids=[lp.player_id for lp in lineup.players],
+        player_ids=[lp.player_id for lp in sorted_players],
+        player_naam=[lp.player.naam for lp in sorted_players],
     )
 
 
@@ -102,6 +105,13 @@ def publish_lineup(
         action="publish",
         old_value=None,
         new_value=_player_names(db, [lp.player_id for lp in lineup.players]) or None,
+    )
+    notify_all_players(
+        db,
+        type_="lineup_published",
+        title=f"Opstelling bekend: {lineup.match.thuisteam} - {lineup.match.uitteam}",
+        body=f"{lineup.match.datum.strftime('%d-%m-%Y')}",
+        match_id=lineup.match_id,
     )
     db.commit()
     db.refresh(lineup)

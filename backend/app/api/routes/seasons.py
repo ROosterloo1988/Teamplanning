@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_beheer
@@ -18,6 +18,22 @@ def list_seasons(db: Session = Depends(get_db), _=Depends(get_current_user)):
 def create_season(payload: SeasonCreate, db: Session = Depends(get_db)):
     season = Season(**payload.model_dump())
     db.add(season)
+    db.commit()
+    db.refresh(season)
+    return season
+
+
+@router.post(
+    "/{season_id}/activate", response_model=SeasonOut, dependencies=[Depends(require_beheer)]
+)
+def activate_season(season_id: int, db: Session = Depends(get_db)):
+    """Maakt dit het actieve seizoen; nieuwe wedstrijden krijgen dit seizoen als default."""
+    season = db.get(Season, season_id)
+    if not season:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Seizoen niet gevonden")
+
+    db.query(Season).filter(Season.id != season_id).update({Season.actief: False})
+    season.actief = True
     db.commit()
     db.refresh(season)
     return season

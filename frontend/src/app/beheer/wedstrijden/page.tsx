@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { api, ApiError } from "@/lib/api";
-import { MatchOut, MatchType } from "@/lib/types";
+import { MatchOut, MatchType, SeasonOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
 import { BeheerNav } from "@/components/BeheerNav";
 import { formatMatchDate } from "@/components/StatusBadge";
@@ -20,6 +20,8 @@ export default function BeheerWedstrijdenPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [matches, setMatches] = useState<MatchOut[]>([]);
+  const [seasons, setSeasons] = useState<SeasonOut[]>([]);
+  const [seasonFilter, setSeasonFilter] = useState<string>("");
   const [form, setForm] = useState({
     datum: "",
     thuisteam: "",
@@ -27,14 +29,16 @@ export default function BeheerWedstrijdenPage() {
     locatie: "",
     type: "COMPETITIE" as MatchType,
     nummer: "",
+    season_id: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  async function load() {
-    const data = await api.get<MatchOut[]>("/matches");
+  const loadMatches = useCallback(async (seasonId: string) => {
+    const query = seasonId ? `?season_id=${seasonId}` : "";
+    const data = await api.get<MatchOut[]>(`/matches${query}`);
     setMatches(data.sort((a, b) => b.datum.localeCompare(a.datum)));
-  }
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -46,8 +50,22 @@ export default function BeheerWedstrijdenPage() {
       router.replace("/speler");
       return;
     }
-    load();
-  }, [user, loading, router]);
+    Promise.all([loadMatches(""), api.get<SeasonOut[]>("/seasons")]).then(([, seasonsData]) => {
+      setSeasons(seasonsData);
+      const active = seasonsData.find((s) => s.actief);
+      if (active) setForm((f) => ({ ...f, season_id: String(active.id) }));
+    });
+  }, [user, loading, router, loadMatches]);
+
+  function seasonNaam(seasonId: number | null): string {
+    if (!seasonId) return "—";
+    return seasons.find((s) => s.id === seasonId)?.naam ?? "—";
+  }
+
+  async function handleFilterChange(value: string) {
+    setSeasonFilter(value);
+    await loadMatches(value);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,9 +76,10 @@ export default function BeheerWedstrijdenPage() {
         ...form,
         nummer: form.nummer || null,
         locatie: form.locatie || null,
+        season_id: form.season_id ? Number(form.season_id) : null,
       });
-      setForm({ datum: "", thuisteam: "", uitteam: "", locatie: "", type: "COMPETITIE", nummer: "" });
-      await load();
+      setForm((f) => ({ ...f, datum: "", thuisteam: "", uitteam: "", locatie: "", nummer: "" }));
+      await loadMatches(seasonFilter);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Opslaan mislukt");
     } finally {
@@ -74,7 +93,21 @@ export default function BeheerWedstrijdenPage() {
     <div>
       <Nav />
       <BeheerNav />
-      <h1 className="mb-6 text-2xl font-bold">Wedstrijden</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Wedstrijden</h1>
+        <select
+          value={seasonFilter}
+          onChange={(e) => handleFilterChange(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+        >
+          <option value="">Alle seizoenen</option>
+          {seasons.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.naam}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <table className="mb-8 w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-sm">
         <thead className="bg-gray-50 text-left text-gray-500">
@@ -84,6 +117,7 @@ export default function BeheerWedstrijdenPage() {
             <th className="px-3 py-2 font-medium">Uit</th>
             <th className="px-3 py-2 font-medium">Locatie</th>
             <th className="px-3 py-2 font-medium">Type</th>
+            <th className="px-3 py-2 font-medium">Seizoen</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -94,11 +128,12 @@ export default function BeheerWedstrijdenPage() {
               <td className="px-3 py-2">{m.uitteam}</td>
               <td className="px-3 py-2">{m.locatie ?? "—"}</td>
               <td className="px-3 py-2">{TYPE_LABELS[m.type]}</td>
+              <td className="px-3 py-2">{seasonNaam(m.season_id)}</td>
             </tr>
           ))}
           {matches.length === 0 && (
             <tr>
-              <td colSpan={5} className="px-3 py-6 text-center text-gray-400">
+              <td colSpan={6} className="px-3 py-6 text-center text-gray-400">
                 Geen wedstrijden
               </td>
             </tr>
@@ -143,6 +178,19 @@ export default function BeheerWedstrijdenPage() {
           {Object.entries(TYPE_LABELS).map(([value, label]) => (
             <option key={value} value={value}>
               {label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={form.season_id}
+          onChange={(e) => setForm({ ...form, season_id: e.target.value })}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2"
+        >
+          <option value="">Geen seizoen</option>
+          {seasons.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.naam}
+              {s.actief ? " (actief)" : ""}
             </option>
           ))}
         </select>

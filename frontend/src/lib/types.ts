@@ -59,6 +59,7 @@ export interface LineupOut {
   published: boolean;
   published_at: string | null;
   player_ids: number[];
+  player_naam: string[];
 }
 
 export interface DashboardStats {
@@ -99,4 +100,22 @@ export interface PlayerStatsOut {
   geen_antwoord: number;
   response_rate: number;
   keer_opgesteld: number;
+}
+
+export interface SeasonOut {
+  id: number;
+  naam: string;
+  startjaar: number;
+  eindjaar: number;
+  actief: boolean;
+}
+
+export interface NotificationOut {
+  id: number;
+  type: string;
+  title: string;
+  body: string | null;
+  match_id: number | null;
+  created_at: string;
+  read_at: string | null;
 }

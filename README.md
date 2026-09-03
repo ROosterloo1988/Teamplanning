@@ -25,9 +25,25 @@ zijn bewust nog niet gebouwd):
   reactiepercentage en de verdeling kan/kan niet/indien nodig/geen
   antwoord/aantal keer opgesteld.
 
-Fase 3 (meerdere teams/seizoenen, automatische notificaties, PWA) is nog niet
-gebouwd. Automatische Teambeheer-sync en Excel-verschilcontrole zijn bewust
-uitgesteld (zie hieronder).
+**Fase 3** (ontwerp sectie 16, deels — volledige multi-team ondersteuning is
+bewust nog niet gebouwd, zie hieronder):
+
+- **Seizoenen**: **Beheer → Seizoenen** beheert seizoenen en wijst er één als
+  actief aan; nieuwe wedstrijden krijgen automatisch het actieve seizoen.
+  Wedstrijden, statistieken en de wedstrijdhistorie zijn filterbaar per
+  seizoen.
+- **Wedstrijdhistorie**: **Geschiedenis** (voor alle rollen) toont afgelopen
+  wedstrijden met de gepubliceerde opstelling, filterbaar per seizoen.
+- **In-app notificatiecentrum**: een bel-icoon met ongelezen-badge in de
+  navigatie en een **Meldingen**-pagina. Spelers met een account krijgen een
+  melding bij een nieuwe wedstrijd en bij een gepubliceerde opstelling.
+- **PWA**: de app heeft een manifest en iconen zodat spelers hem op hun
+  telefoon kunnen "installeren" (add to home screen).
+
+Automatische Teambeheer-sync en Excel-verschilcontrole (fase 2) blijven
+bewust uitgesteld. Volledige multi-team ondersteuning (meerdere teams met
+gescheiden spelers/captains/wedstrijden en een team-wisselaar) is nog niet
+gebouwd — de app werkt voorlopig voor één team, nu met seizoenen erbovenop.
 
 ## Techniek
 
@@ -96,11 +112,11 @@ Een wedstrijdnummer dat begint met `B` wordt als **Beker** geïmporteerd, met
 
 ## Databaseschema
 
-Zie `backend/app/models/` en de eerste Alembic-migratie
-(`backend/alembic/versions/0001_initial.py`) voor het schema: `users`,
-`players`, `teams`, `seasons`, `competitions`, `matches`, `availability`,
-`lineups`, `lineup_players` en `audit_log` (wijzigingsgeschiedenis, ontwerp
-sectie 10).
+Zie `backend/app/models/` en de Alembic-migraties
+(`backend/alembic/versions/`) voor het schema: `users`, `players`, `teams`,
+`seasons` (met `actief`-vlag), `competitions`, `matches`, `availability`,
+`lineups`, `lineup_players`, `audit_log` (wijzigingsgeschiedenis, ontwerp
+sectie 10) en `notifications` (in-app notificatiecentrum, fase 3).
 
 ## Nog niet gebouwd
 
@@ -108,5 +124,6 @@ sectie 10).
   bewust uitgesteld — de feedstructuur is nog niet technisch geïnspecteerd)
 - Excel-verschilcontrole ("Excel overnemen" / "App behouden", fase 2, bewust
   uitgesteld)
-- Herinneringen via e-mail of push (fase 2 heeft alleen in-app herinneringen)
-- Meerdere teams en seizoenen tegelijk, automatische notificaties, PWA (fase 3)
+- Herinneringen en notificaties via e-mail of push (alleen in-app)
+- Volledige multi-team ondersteuning: meerdere teams met gescheiden
+  spelers/captains/wedstrijden en een team-wisselaar door de hele app

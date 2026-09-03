@@ -8,6 +8,7 @@ from app.api.routes import (
     availability,
     lineups,
     matches,
+    notifications,
     players,
     seasons,
     stats,
@@ -35,6 +36,7 @@ app.include_router(lineups.router, prefix=settings.API_V1_PREFIX)
 app.include_router(admin.router, prefix=settings.API_V1_PREFIX)
 app.include_router(audit.router, prefix=settings.API_V1_PREFIX)
 app.include_router(stats.router, prefix=settings.API_V1_PREFIX)
+app.include_router(notifications.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/api/health")

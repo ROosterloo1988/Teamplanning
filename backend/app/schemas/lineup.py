@@ -15,3 +15,4 @@ class LineupOut(BaseModel):
     published: bool
     published_at: datetime | None
     player_ids: list[int]
+    player_naam: list[str] = []

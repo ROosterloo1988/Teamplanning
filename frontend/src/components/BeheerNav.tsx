@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function BeheerNav() {
   return (
-    <div className="mb-6 flex gap-4 text-sm font-medium text-gray-500">
+    <div className="mb-6 flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium text-gray-500">
       <Link href="/beheer" className="hover:text-brand">
         Dashboard
       </Link>
@@ -11,6 +11,9 @@ export function BeheerNav() {
       </Link>
       <Link href="/beheer/wedstrijden" className="hover:text-brand">
         Wedstrijden
+      </Link>
+      <Link href="/beheer/seizoenen" className="hover:text-brand">
+        Seizoenen
       </Link>
       <Link href="/beheer/import" className="hover:text-brand">
         Excel importeren

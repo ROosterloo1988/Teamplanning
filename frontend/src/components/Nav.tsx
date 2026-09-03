@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export function Nav() {
   const { user, logout } = useAuth();
@@ -23,10 +24,16 @@ export function Nav() {
             Beheer
           </Link>
         )}
+        <Link href="/geschiedenis" className="hover:text-brand">
+          Geschiedenis
+        </Link>
       </div>
-      <button onClick={logout} className="text-sm text-gray-500 hover:text-gray-800">
-        Uitloggen
-      </button>
+      <div className="flex items-center gap-3">
+        <NotificationBell />
+        <button onClick={logout} className="text-sm text-gray-500 hover:text-gray-800">
+          Uitloggen
+        </button>
+      </div>
     </nav>
   );
 }

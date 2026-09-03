@@ -6,7 +6,8 @@ from app.api.deps import require_beheer
 from app.db.session import get_db
 from app.models.availability import Availability
 from app.models.enums import AvailabilityStatus
-from app.models.lineup import LineupPlayer
+from app.models.lineup import Lineup, LineupPlayer
+from app.models.match import Match
 from app.models.player import Player
 from app.schemas.stats import PlayerStatsOut
 
@@ -14,23 +15,32 @@ router = APIRouter(prefix="/stats", tags=["stats"])
 
 
 @router.get("/players", response_model=list[PlayerStatsOut], dependencies=[Depends(require_beheer)])
-def player_stats(db: Session = Depends(get_db)):
-    """Betere statistieken per speler, zie functioneel ontwerp v1 sectie 12/16."""
+def player_stats(season_id: int | None = None, db: Session = Depends(get_db)):
+    """Betere statistieken per speler, zie functioneel ontwerp v1 sectie 12/16.
+
+    Optioneel filterbaar op seizoen (season_id) voor wedstrijdhistorie per seizoen.
+    """
     players = db.query(Player).order_by(Player.naam).all()
 
+    availability_query = db.query(Availability.player_id, Availability.status, func.count())
+    lineup_query = db.query(LineupPlayer.player_id, func.count())
+    if season_id is not None:
+        availability_query = availability_query.join(Match, Availability.match_id == Match.id).filter(
+            Match.season_id == season_id
+        )
+        lineup_query = (
+            lineup_query.join(Lineup, LineupPlayer.lineup_id == Lineup.id)
+            .join(Match, Lineup.match_id == Match.id)
+            .filter(Match.season_id == season_id)
+        )
+
     counts_by_player: dict[int, dict[AvailabilityStatus, int]] = {}
-    for player_id, status_value, count in (
-        db.query(Availability.player_id, Availability.status, func.count())
-        .group_by(Availability.player_id, Availability.status)
-        .all()
-    ):
+    for player_id, status_value, count in availability_query.group_by(
+        Availability.player_id, Availability.status
+    ).all():
         counts_by_player.setdefault(player_id, {})[status_value] = count
 
-    lineup_counts = dict(
-        db.query(LineupPlayer.player_id, func.count())
-        .group_by(LineupPlayer.player_id)
-        .all()
-    )
+    lineup_counts = dict(lineup_query.group_by(LineupPlayer.player_id).all())
 
     result: list[PlayerStatsOut] = []
     for player in players:
