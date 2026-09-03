@@ -12,8 +12,7 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
   en publiceren die naar de spelers.
 - Beheer beheert spelers en wedstrijden, en importeert de bestaande Excel-planning.
 
-**Fase 2** (ontwerp sectie 16, deels — Teambeheer-sync en Excel-verschilcontrole
-zijn bewust nog niet gebouwd):
+**Fase 2** (ontwerp sectie 16):
 
 - **Wijzigingslog**: elke wijziging in beschikbaarheid en opstelling wordt
   gelogd (wie, wanneer, oude → nieuwe waarde). Zichtbaar via **Beheer →
@@ -26,7 +25,7 @@ zijn bewust nog niet gebouwd):
   antwoord/aantal keer opgesteld.
 
 **Fase 3** (ontwerp sectie 16, deels — volledige multi-team ondersteuning is
-bewust nog niet gebouwd, zie hieronder):
+een leuke uitbreiding voor later, maar nu niet nodig, zie hieronder):
 
 - **Seizoenen**: **Beheer → Seizoenen** beheert seizoenen en wijst er één als
   actief aan; nieuwe wedstrijden krijgen automatisch het actieve seizoen.
@@ -50,10 +49,12 @@ bewust nog niet gebouwd, zie hieronder):
   gekoppeld seizoen en meldt nieuwe of gewijzigde wedstrijden via het
   notificatiecentrum — uit te zetten met `TEAMBEHEER_AUTO_SYNC=false`.
 
-Excel-verschilcontrole (fase 2) blijft bewust uitgesteld. Volledige
-multi-team ondersteuning (meerdere teams met gescheiden
-spelers/captains/wedstrijden en een team-wisselaar) is nog niet gebouwd — de
-app werkt voorlopig voor één team, nu met seizoenen erbovenop.
+Excel-verschilcontrole (fase 2) is uit het ontwerp geschrapt — met de
+Teambeheer-sync als bron is dat niet meer nodig. Volledige multi-team
+ondersteuning (meerdere teams met gescheiden spelers/captains/wedstrijden en
+een team-wisselaar) is een leuke uitbreiding voor later, maar niet nodig op
+dit moment — de app werkt voorlopig voor één team, nu met seizoenen
+erbovenop.
 
 ## Techniek
 
@@ -160,8 +161,13 @@ sectie 10), `notifications` (in-app notificatiecentrum, fase 3) en
 
 ## Nog niet gebouwd
 
-- Excel-verschilcontrole ("Excel overnemen" / "App behouden", fase 2, bewust
-  uitgesteld)
 - Herinneringen en notificaties via e-mail of push (alleen in-app)
 - Volledige multi-team ondersteuning: meerdere teams met gescheiden
-  spelers/captains/wedstrijden en een team-wisselaar door de hele app
+  spelers/captains/wedstrijden en een team-wisselaar door de hele app (leuke
+  uitbreiding voor later, nu bewust niet nodig)
+
+## Niet meer in scope
+
+- **Excel-verschilcontrole** ("Excel overnemen" / "App behouden", ontwerp
+  sectie 8) is geschrapt: nooit gebouwd, en met de Teambeheer-sync als bron
+  voor wedstrijden is een aparte Excel-vergelijking niet meer relevant.
