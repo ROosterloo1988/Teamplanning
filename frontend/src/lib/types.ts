@@ -67,3 +67,36 @@ export interface DashboardStats {
   wedstrijden_compleet: number;
   wedstrijden_missen_antwoorden: number;
 }
+
+export interface MatchReminderOut {
+  match: MatchOut;
+  total: number;
+  missing: number;
+}
+
+export interface AuditLogOut {
+  id: number;
+  created_at: string;
+  user_naam: string | null;
+  entity_type: string;
+  action: string;
+  old_value: string | null;
+  new_value: string | null;
+  match_id: number | null;
+  match_datum: string | null;
+  match_thuisteam: string | null;
+  match_uitteam: string | null;
+  player_naam: string | null;
+}
+
+export interface PlayerStatsOut {
+  player_id: number;
+  player_naam: string;
+  totaal: number;
+  beschikbaar: number;
+  niet_beschikbaar: number;
+  indien_nodig: number;
+  geen_antwoord: number;
+  response_rate: number;
+  keer_opgesteld: number;
+}

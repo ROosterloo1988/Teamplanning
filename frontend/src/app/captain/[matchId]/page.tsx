@@ -4,9 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { AvailabilityWithPlayer, LineupOut, MatchOut } from "@/lib/types";
+import { AuditLogOut, AvailabilityWithPlayer, LineupOut, MatchOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
 import { formatMatchDate, StatusBadge } from "@/components/StatusBadge";
+import { AuditLogList } from "@/components/AuditLogList";
 
 export default function CaptainMatchDetailPage() {
   const { user, loading } = useAuth();
@@ -18,20 +19,23 @@ export default function CaptainMatchDetailPage() {
   const [availability, setAvailability] = useState<AvailabilityWithPlayer[]>([]);
   const [lineup, setLineup] = useState<LineupOut | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [history, setHistory] = useState<AuditLogOut[]>([]);
   const [fetching, setFetching] = useState(true);
   const [publishing, setPublishing] = useState(false);
 
   const load = useCallback(async () => {
     setFetching(true);
-    const [matchData, availabilityData, lineupData] = await Promise.all([
+    const [matchData, availabilityData, lineupData, historyData] = await Promise.all([
       api.get<MatchOut>(`/matches/${matchId}`),
       api.get<AvailabilityWithPlayer[]>(`/availability/match/${matchId}`),
       api.get<LineupOut>(`/lineups/match/${matchId}`),
+      api.get<AuditLogOut[]>(`/audit-log/match/${matchId}`),
     ]);
     setMatch(matchData);
     setAvailability(availabilityData.sort((a, b) => a.player_naam.localeCompare(b.player_naam)));
     setLineup(lineupData);
     setSelected(new Set(lineupData.player_ids));
+    setHistory(historyData);
     setFetching(false);
   }, [matchId]);
 
@@ -57,11 +61,17 @@ export default function CaptainMatchDetailPage() {
     });
   }
 
+  async function refreshHistory() {
+    const h = await api.get<AuditLogOut[]>(`/audit-log/match/${matchId}`);
+    setHistory(h);
+  }
+
   async function saveLineup() {
     const updated = await api.put<LineupOut>(`/lineups/match/${matchId}`, {
       player_ids: Array.from(selected),
     });
     setLineup(updated);
+    await refreshHistory();
   }
 
   async function publish() {
@@ -70,6 +80,7 @@ export default function CaptainMatchDetailPage() {
       await saveLineup();
       const published = await api.post<LineupOut>(`/lineups/match/${matchId}/publish`);
       setLineup(published);
+      await refreshHistory();
     } finally {
       setPublishing(false);
     }
@@ -147,6 +158,15 @@ export default function CaptainMatchDetailPage() {
       {lineup?.published && (
         <p className="mt-3 text-sm text-green-700">✅ Opstelling is gepubliceerd naar spelers</p>
       )}
+
+      <details className="mt-8">
+        <summary className="cursor-pointer font-medium text-gray-700">
+          Geschiedenis {history.length > 0 && `(${history.length})`}
+        </summary>
+        <div className="mt-3">
+          <AuditLogList entries={history} />
+        </div>
+      </details>
     </div>
   );
 }

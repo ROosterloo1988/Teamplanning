@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { MatchOut } from "@/lib/types";
+import { MatchOut, MatchReminderOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
 import { formatMatchDate } from "@/components/StatusBadge";
 
@@ -13,6 +13,7 @@ export default function CaptainMatchesPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [matches, setMatches] = useState<MatchOut[]>([]);
+  const [reminders, setReminders] = useState<MatchReminderOut[]>([]);
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
@@ -25,9 +26,14 @@ export default function CaptainMatchesPage() {
       router.replace("/speler");
       return;
     }
-    api
-      .get<MatchOut[]>("/matches?upcoming_only=true")
-      .then(setMatches)
+    Promise.all([
+      api.get<MatchOut[]>("/matches?upcoming_only=true"),
+      api.get<MatchReminderOut[]>("/matches/reminders"),
+    ])
+      .then(([matchesData, remindersData]) => {
+        setMatches(matchesData);
+        setReminders(remindersData);
+      })
       .finally(() => setFetching(false));
   }, [user, loading, router]);
 
@@ -38,7 +44,23 @@ export default function CaptainMatchesPage() {
   return (
     <div>
       <Nav />
-      <h1 className="mb-6 text-2xl font-bold">Aankomende wedstrijden</h1>
+      <h1 className="mb-4 text-2xl font-bold">Aankomende wedstrijden</h1>
+
+      {reminders.length > 0 && (
+        <div className="mb-6 space-y-2">
+          {reminders.map((r) => (
+            <Link
+              key={r.match.id}
+              href={`/captain/${r.match.id}`}
+              className="block rounded-lg bg-amber-50 p-3 text-sm text-amber-800 hover:bg-amber-100"
+            >
+              ⚠️ Voor <span className="font-medium capitalize">{formatMatchDate(r.match.datum)}</span> hebben{" "}
+              {r.missing} van de {r.total} spelers nog niet gereageerd.
+            </Link>
+          ))}
+        </div>
+      )}
+
       <ul className="divide-y divide-gray-200 rounded-xl border border-gray-200 bg-white">
         {matches.map((match) => (
           <li key={match.id}>

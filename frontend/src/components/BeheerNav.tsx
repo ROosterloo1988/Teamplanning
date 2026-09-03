@@ -15,6 +15,12 @@ export function BeheerNav() {
       <Link href="/beheer/import" className="hover:text-brand">
         Excel importeren
       </Link>
+      <Link href="/beheer/logboek" className="hover:text-brand">
+        Logboek
+      </Link>
+      <Link href="/beheer/statistieken" className="hover:text-brand">
+        Statistieken
+      </Link>
     </div>
   );
 }

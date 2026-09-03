@@ -15,5 +15,9 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
 
+    # Aantal dagen voor de wedstrijd waarop herinneringen actief worden, zie
+    # functioneel ontwerp v1 sectie 11.
+    REMINDER_DAYS_BEFORE: int = 3
+
 
 settings = Settings()

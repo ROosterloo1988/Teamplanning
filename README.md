@@ -4,7 +4,7 @@ Webapp die de Excel-planning voor beschikbaarheid en opstelling vervangt door
 een centrale database met een spelerscherm, captain-scherm en beheerscherm.
 Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
 
-Dit is de **Fase 1 MVP** (zie ontwerp sectie 16):
+**Fase 1 MVP** (ontwerp sectie 16):
 
 - Spelers loggen in, zien hun eerstvolgende wedstrijd en geven beschikbaarheid
   door (Ja / Nee / Indien nodig).
@@ -12,9 +12,22 @@ Dit is de **Fase 1 MVP** (zie ontwerp sectie 16):
   en publiceren die naar de spelers.
 - Beheer beheert spelers en wedstrijden, en importeert de bestaande Excel-planning.
 
-Fase 2 (automatische Teambeheer-sync, Excel-verschilcontrole, herinneringen,
-uitgebreide statistieken) en fase 3 (meerdere teams/seizoenen, notificaties,
-PWA) zijn nog niet gebouwd.
+**Fase 2** (ontwerp sectie 16, deels — Teambeheer-sync en Excel-verschilcontrole
+zijn bewust nog niet gebouwd):
+
+- **Wijzigingslog**: elke wijziging in beschikbaarheid en opstelling wordt
+  gelogd (wie, wanneer, oude → nieuwe waarde). Zichtbaar via **Beheer →
+  Logboek** en als inklapbare "Geschiedenis" op de captain-wedstrijdpagina.
+- **Herinneringen (in-app)**: spelers zien een banner als ze binnen 3 dagen
+  voor de wedstrijd nog niet gereageerd hebben; captains zien op hun
+  wedstrijdenoverzicht welke wedstrijden nog ontbrekende reacties hebben.
+- **Betere statistieken**: **Beheer → Statistieken** toont per speler het
+  reactiepercentage en de verdeling kan/kan niet/indien nodig/geen
+  antwoord/aantal keer opgesteld.
+
+Fase 3 (meerdere teams/seizoenen, automatische notificaties, PWA) is nog niet
+gebouwd. Automatische Teambeheer-sync en Excel-verschilcontrole zijn bewust
+uitgesteld (zie hieronder).
 
 ## Techniek
 
@@ -89,9 +102,11 @@ Zie `backend/app/models/` en de eerste Alembic-migratie
 `lineups`, `lineup_players` en `audit_log` (wijzigingsgeschiedenis, ontwerp
 sectie 10).
 
-## Nog niet gebouwd (fase 2/3)
+## Nog niet gebouwd
 
-- Automatische nachtelijke synchronisatie met de Teambeheer-feed
-- Excel-verschilcontrole ("Excel overnemen" / "App behouden")
-- Herinneringen (e-mail/push)
-- Meerdere teams en seizoenen tegelijk, uitgebreide statistieken
+- Automatische nachtelijke synchronisatie met de Teambeheer-feed (fase 2,
+  bewust uitgesteld — de feedstructuur is nog niet technisch geïnspecteerd)
+- Excel-verschilcontrole ("Excel overnemen" / "App behouden", fase 2, bewust
+  uitgesteld)
+- Herinneringen via e-mail of push (fase 2 heeft alleen in-app herinneringen)
+- Meerdere teams en seizoenen tegelijk, automatische notificaties, PWA (fase 3)

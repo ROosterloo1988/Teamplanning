@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, require_captain
 from app.db.session import get_db
 from app.models.lineup import Lineup, LineupPlayer
+from app.models.player import Player
 from app.models.user import User
 from app.schemas.lineup import LineupOut, LineupUpdate
 from app.services.audit import log_change
@@ -32,6 +33,13 @@ def _get_or_create(db: Session, match_id: int) -> Lineup:
     return lineup
 
 
+def _player_names(db: Session, player_ids: list[int]) -> str:
+    if not player_ids:
+        return ""
+    names = db.query(Player.naam).filter(Player.id.in_(player_ids)).all()
+    return ", ".join(sorted(n for (n,) in names))
+
+
 @router.get("/match/{match_id}", response_model=LineupOut)
 def get_lineup(match_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
     lineup = db.query(Lineup).filter(Lineup.match_id == match_id).first()
@@ -49,10 +57,25 @@ def set_lineup(
 ):
     lineup = _get_or_create(db, match_id)
 
+    old_names = _player_names(db, [lp.player_id for lp in lineup.players])
+
     lineup.players.clear()
     db.flush()
     for player_id in payload.player_ids:
         lineup.players.append(LineupPlayer(lineup_id=lineup.id, player_id=player_id))
+    db.flush()
+
+    new_names = _player_names(db, payload.player_ids)
+    if old_names != new_names:
+        log_change(
+            db,
+            user_id=current_user.id,
+            entity_type="lineup",
+            entity_id=lineup.id,
+            action="update",
+            old_value=old_names or None,
+            new_value=new_names or None,
+        )
 
     db.commit()
     db.refresh(lineup)
@@ -78,7 +101,7 @@ def publish_lineup(
         entity_id=lineup.id,
         action="publish",
         old_value=None,
-        new_value=",".join(str(lp.player_id) for lp in lineup.players),
+        new_value=_player_names(db, [lp.player_id for lp in lineup.players]) or None,
     )
     db.commit()
     db.refresh(lineup)

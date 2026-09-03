@@ -6,7 +6,10 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { AvailabilityOut, AvailabilityStatus, LineupOut, MatchOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
-import { formatMatchDate, formatMatchDateShort, StatusBadge } from "@/components/StatusBadge";
+import { daysUntil, formatMatchDate, formatMatchDateShort, StatusBadge } from "@/components/StatusBadge";
+
+// Zie functioneel ontwerp v1 sectie 11: herinnering vanaf N dagen voor de wedstrijd.
+const REMINDER_DAYS_BEFORE = 3;
 
 interface Row {
   match: MatchOut;
@@ -71,6 +74,11 @@ export default function SpelerPage() {
 
   const next = rows[0];
   const upcoming = rows.slice(0, 8);
+  const showReminder =
+    !!next &&
+    (next.availability?.status ?? "NO_RESPONSE") === "NO_RESPONSE" &&
+    daysUntil(next.match.datum) <= REMINDER_DAYS_BEFORE &&
+    daysUntil(next.match.datum) >= 0;
 
   return (
     <div>
@@ -79,6 +87,13 @@ export default function SpelerPage() {
       <p className="mb-6 text-gray-500">Welkom {user?.naam}</p>
 
       {!next && <p className="text-gray-500">Geen aankomende wedstrijden gepland.</p>}
+
+      {showReminder && (
+        <div className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+          🏓 Je hebt je beschikbaarheid voor{" "}
+          <span className="font-medium">{formatMatchDate(next.match.datum)}</span> nog niet ingevuld.
+        </div>
+      )}
 
       {next && (
         <div className="mb-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
