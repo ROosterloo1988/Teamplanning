@@ -11,7 +11,7 @@ from app.models.availability import Availability
 from app.models.match import Match
 from app.models.player import Player
 from app.models.season import Season
-from app.models.enums import AvailabilityStatus
+from app.models.enums import AvailabilityStatus, MatchStatus
 from app.schemas.match import MatchCreate, MatchOut, MatchUpdate
 from app.schemas.reminder import MatchReminderOut
 from app.services.notifications import notify_all_players
@@ -28,7 +28,11 @@ def match_reminders(days: int | None = None, db: Session = Depends(get_db)):
     today = date.today()
     matches = (
         db.query(Match)
-        .filter(Match.datum >= today, Match.datum <= today + timedelta(days=window))
+        .filter(
+            Match.datum >= today,
+            Match.datum <= today + timedelta(days=window),
+            Match.status == MatchStatus.GEPLAND,
+        )
         .order_by(Match.datum)
         .all()
     )

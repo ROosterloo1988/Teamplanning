@@ -109,12 +109,45 @@ export default function CaptainMatchDetailPage() {
     return lines.join("\n");
   }
 
-  async function copyForWhatsApp() {
+  // Valt terug op de oude execCommand-truc met een verborgen textarea: de
+  // moderne Clipboard API vereist een secure context (https) en kan op
+  // sommige browsers/webviews alsnog weigeren.
+  function legacyCopy(text: string) {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.top = "0";
+    textarea.style.left = "0";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
     try {
-      await navigator.clipboard.writeText(buildWhatsAppText());
+      if (!document.execCommand("copy")) {
+        throw new Error("execCommand('copy') gaf false terug");
+      }
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  }
+
+  async function copyForWhatsApp() {
+    const text = buildWhatsAppText();
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        legacyCopy(text);
+      }
       setCopyState("copied");
     } catch {
-      setCopyState("error");
+      try {
+        legacyCopy(text);
+        setCopyState("copied");
+      } catch {
+        setCopyState("error");
+      }
     } finally {
       setTimeout(() => setCopyState("idle"), 2500);
     }

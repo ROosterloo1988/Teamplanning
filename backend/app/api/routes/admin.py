@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_beheer
 from app.db.session import get_db
 from app.models.availability import Availability
-from app.models.enums import AvailabilityStatus
+from app.models.enums import AvailabilityStatus, MatchStatus
 from app.models.match import Match
 from app.models.player import Player
 
@@ -18,7 +18,10 @@ def dashboard(db: Session = Depends(get_db)):
 
     complete_matches = 0
     missing_matches = 0
-    for match in db.query(Match).all():
+    # Alleen nog geplande wedstrijden hebben baat bij reacties verzamelen —
+    # een gespeelde of afgelaste wedstrijd telt niet meer mee als "compleet"
+    # of "mist antwoorden".
+    for match in db.query(Match).filter(Match.status == MatchStatus.GEPLAND).all():
         statuses = [a.status for a in match.availabilities]
         if statuses and all(s != AvailabilityStatus.NO_RESPONSE for s in statuses):
             complete_matches += 1
