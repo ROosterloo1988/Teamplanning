@@ -15,7 +15,6 @@ from app.api.routes import (
     seasons,
     stats,
     teambeheer,
-    teams,
 )
 from app.core.config import settings
 
@@ -47,7 +46,6 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(players.router, prefix=settings.API_V1_PREFIX)
-app.include_router(teams.router, prefix=settings.API_V1_PREFIX)
 app.include_router(seasons.router, prefix=settings.API_V1_PREFIX)
 app.include_router(matches.router, prefix=settings.API_V1_PREFIX)
 app.include_router(availability.router, prefix=settings.API_V1_PREFIX)

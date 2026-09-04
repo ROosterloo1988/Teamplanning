@@ -20,16 +20,9 @@ export interface UserOut {
   player_id: number | null;
 }
 
-export interface TeamOut {
-  id: number;
-  naam: string;
-  vereniging: string | null;
-}
-
 export interface PlayerOut {
   id: number;
   naam: string;
-  team_id: number | null;
   user_id: number | null;
 }
 

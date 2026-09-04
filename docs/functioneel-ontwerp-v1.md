@@ -93,7 +93,7 @@ onderdeel wordt niet gebouwd.
 
 ## 9. Database
 
-Kerntabellen: `users`, `players`, `teams`, `seasons`, `competitions`,
+Kerntabellen: `users`, `players`, `seasons`, `competitions`,
 `matches`, `availability`, `lineups`, `lineup_players`. Zie
 `backend/app/models/` voor de daadwerkelijke implementatie (inclusief een
 `audit_log`-tabel voor wijzigingsgeschiedenis).
@@ -111,8 +111,9 @@ voor de wedstrijd); captains zien hoeveel spelers nog niet gereageerd hebben.
 ## 12. Beheer
 
 Dashboard met kerncijfers (spelers, wedstrijden, compleet/ontbrekend,
-nieuwe wedstrijden vanuit Teambeheer) en beheerschermen voor spelers, teams,
-seizoenen, competities, wedstrijden, imports, gebruikers, rollen en logboek.
+nieuwe wedstrijden vanuit Teambeheer) en beheerschermen voor spelers
+(aanmaken, bewerken, verwijderen), seizoenen, competities, wedstrijden,
+Teambeheer-koppeling, gebruikers, rollen en logboek.
 
 ## 13. Mobiel én desktop
 
@@ -126,9 +127,9 @@ Linux/Docker/Nginx/HTTPS (server), dagelijkse backups met 30 dagen historie.
 
 ## 15. Migratie
 
-Eenmalige import van de huidige Excel-planning (wedstrijden, spelers,
-beschikbaarheden) naar PostgreSQL, zodat het huidige seizoen meteen in de
-nieuwe applicatie staat.
+Niet meer gewenst: de eenmalige Excel-import is geschrapt (zie sectie 16).
+Wedstrijden komen binnen via de Teambeheer-sync (secties 6-7); spelers worden
+handmatig aangemaakt via **Beheer → Spelers**.
 
 ## 16. MVP-fasering
 
@@ -137,15 +138,17 @@ nieuwe applicatie staat.
 - Speler: inloggen, wedstrijden bekijken, beschikbaarheid invullen
 - Captain: wedstrijden bekijken, beschikbaarheid bekijken, opstelling maken
   en publiceren
-- Beheer: spelers beheren, wedstrijden beheren, Excel importeren,
-  Teambeheer importeren
+- Beheer: spelers beheren, wedstrijden beheren, Teambeheer importeren
 
 **Fase 2** — wijzigingslog, herinneringen, betere statistieken.
 (Excel-verschilcontrole is geschrapt, zie sectie 8.)
 
 **Fase 3** — seizoenen, automatische notificaties, uitgebreide
-wedstrijdhistorie, PWA. (Volledige multi-team ondersteuning is een leuke
-uitbreiding voor later, maar nu niet nodig.)
+wedstrijdhistorie, PWA.
+
+Geschrapt uit het ontwerp: Excel importeren als bron (Excel-verschilcontrole,
+sectie 8, en de eenmalige migratie-import, sectie 15) en volledige multi-team
+ondersteuning — de app is gebouwd voor precies één team (De Gouv).
 
 **Teambeheer-sync** (secties 6-7) — handmatige import + nachtelijke
 automatische synchronisatie, gebouwd tegen de echte jaarprogramma-feed.

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_beheer
@@ -7,7 +7,6 @@ from app.models.availability import Availability
 from app.models.enums import AvailabilityStatus
 from app.models.match import Match
 from app.models.player import Player
-from app.services.excel_import import import_excel
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_beheer)])
 
@@ -32,10 +31,3 @@ def dashboard(db: Session = Depends(get_db)):
         "wedstrijden_compleet": complete_matches,
         "wedstrijden_missen_antwoorden": missing_matches,
     }
-
-
-@router.post("/import/excel")
-async def import_excel_endpoint(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    contents = await file.read()
-    result = import_excel(db, contents)
-    return result

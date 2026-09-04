@@ -4,6 +4,7 @@ from pathlib import Path
 from app.services.teambeheer import parse_jaarprogramma, resolve_year, season_code
 
 FIXTURE = Path(__file__).parent / "fixtures" / "teambeheer_jaarprogramma_1a.html"
+FULL_SEASON_FIXTURE = Path(__file__).parent / "fixtures" / "teambeheer_jaarprogramma_1a_full_season.html"
 
 
 def _fixtures():
@@ -64,3 +65,33 @@ def test_resolve_year_returns_none_for_unknown_date():
 def test_season_code_format():
     assert season_code(2026) == "26-27"
     assert season_code(2099) == "99-00"
+
+
+def test_de_gouv_jan_to_may_dates_resolve_into_next_calendar_year():
+    """Regressietest tegen een echte, volledige jaarprogramma-pagina (speelweek
+    1 t/m 26): rond de jaarwisseling staat er op de feed nog steeds gewoon
+    'DD-MM' (bv. '07-01'), zonder jaartal. resolve_year moet die met de
+    seizoensgrens (juli t/m december -> startjaar, januari t/m juni ->
+    eindjaar) naar het juiste kalenderjaar 2027 omzetten, niet als
+    'geen datum' (n.n.b.) behandelen."""
+    html = FULL_SEASON_FIXTURE.read_text()
+    fixtures = [f for f in parse_jaarprogramma(html) if f.thuis_id == 3852 or f.uit_id == 3852]
+    assert len(fixtures) == 26  # DE GOUV speelt elke speelweek van 1 t/m 26
+
+    resolved = {f.speelweek: resolve_year(f.datum_raw, 2026, 2027) for f in fixtures}
+    assert None not in resolved.values()
+
+    # Voorbeelden na de jaarwisseling: allemaal 2027, oplopend met de speelweek.
+    assert resolved[13] == date(2027, 1, 7)
+    assert resolved[14] == date(2027, 1, 14)
+    assert resolved[15] == date(2027, 1, 20)
+    assert resolved[18] == date(2027, 2, 24)
+    assert resolved[26] == date(2027, 5, 20)
+
+    # ... en de eerste seizoenshelft blijft gewoon 2026.
+    assert resolved[1] == date(2026, 9, 2)
+    assert resolved[12] == date(2026, 12, 10)
+
+    # De reeks moet chronologisch oplopen (geen datum "voor" de vorige speelweek).
+    ordered = [resolved[week] for week in sorted(resolved)]
+    assert ordered == sorted(ordered)
