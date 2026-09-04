@@ -28,7 +28,7 @@ export default function BeheerStatistiekenPage() {
       router.replace("/login");
       return;
     }
-    if (user.rol !== "BEHEER") {
+    if (user.rol !== "BEHEER" && user.rol !== "CAPTAIN") {
       router.replace("/speler");
       return;
     }
@@ -47,7 +47,7 @@ export default function BeheerStatistiekenPage() {
   return (
     <div>
       <Nav />
-      <BeheerNav />
+      {user?.rol === "BEHEER" && <BeheerNav />}
       <div className="mb-2 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Statistieken</h1>
         <select

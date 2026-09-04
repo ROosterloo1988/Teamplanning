@@ -19,6 +19,11 @@ export function Nav() {
             Captain
           </Link>
         )}
+        {user.rol === "CAPTAIN" && (
+          <Link href="/beheer/statistieken" className="whitespace-nowrap hover:text-brand">
+            Statistieken
+          </Link>
+        )}
         {user.rol === "BEHEER" && (
           <Link href="/beheer" className="whitespace-nowrap hover:text-brand">
             Beheer

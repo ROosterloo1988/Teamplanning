@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_beheer
+from app.api.deps import require_captain
 from app.db.session import get_db
 from app.models.availability import Availability
 from app.models.enums import AvailabilityStatus
@@ -14,7 +14,7 @@ from app.schemas.stats import PlayerStatsOut
 router = APIRouter(prefix="/stats", tags=["stats"])
 
 
-@router.get("/players", response_model=list[PlayerStatsOut], dependencies=[Depends(require_beheer)])
+@router.get("/players", response_model=list[PlayerStatsOut], dependencies=[Depends(require_captain)])
 def player_stats(season_id: int | None = None, db: Session = Depends(get_db)):
     """Betere statistieken per speler, zie functioneel ontwerp v1 sectie 12/16.
 
