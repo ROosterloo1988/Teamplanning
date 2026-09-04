@@ -15,7 +15,9 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
   e-mail): het zet de opstelling zichtbaar voor spelers in de app en maakt een
   in-app melding. Voor de WhatsApp-groep staat er een aparte knop "📋 Kopieer
   opstelling voor WhatsApp" die een kant-en-klaar tekstberichtje (wedstrijd,
-  datum, locatie, geselecteerde spelers) naar het klembord kopieert.
+  datum, locatie, geselecteerde spelers) naar het klembord kopieert — inclusief
+  een Google Maps-link op de locatieregel, die WhatsApp automatisch als
+  aanklikbare navigatielink toont.
 - De opstelling is ook achteraf aan te passen — ook voor al gespeelde
   wedstrijden (via **Geschiedenis → Opstelling aanpassen**) en met iedereen
   selecteerbaar, ook wie eerder "kan niet" aangaf, voor een late wissel.
@@ -85,7 +87,9 @@ ondersteuning met gescheiden spelers/captains/wedstrijden per team.
 - Captain- en beheeraccounts (🔒 in de lijst) vragen daarbij om hun
   persoonlijke **ontgrendelwachtwoord**, ingesteld per account via
   **Beheer → Spelers**. Het teamwachtwoord zelf is wijzigbaar via
-  **Beheer → Instellingen**.
+  **Beheer → Instellingen**. Captains en beheerders wijzigen hun eigen
+  ontgrendelwachtwoord zelf via het ⚙️-icoon in de navigatie (**Mijn
+  account**), zonder tussenkomst van Beheer → Spelers.
 - Het teamwachtwoord blijft op het toestel onthouden (90 dagen); uitloggen
   brengt je terug naar de naam-kiezer, niet naar het teamwachtwoord-scherm.
 
@@ -152,6 +156,14 @@ Ga naar **Beheer → Teambeheer**, kies het seizoen en vul in:
 - **Poule** (`div=`, bv. `1A`)
 - **Teamnummer** (`t=` uit de team-URL van je eigen team, bv.
   `https://feeds.teambeheer.nl/web/team?d=11&t=3852&s=26-27` → `3852`)
+
+Voorbeeld voor seizoen 2026-2027, bond 11, poule 1A:
+`https://feeds.teambeheer.nl/web/jaarprogramma?d=11&s=26-27&div=1A` — dus
+**Bond** `11`, **Poule** `1A`, en het seizoen (`s=26-27`) wordt automatisch
+afgeleid van het gekozen seizoen in de app. Voor een volgend seizoen hoef je
+dus alleen een nieuw seizoen (bv. startjaar 2027) aan te maken en aan
+dezelfde koppeling te hangen — bond en poule blijven meestal gelijk, alleen
+`s=` schuift automatisch mee.
 
 De app haalt daarmee `https://feeds.teambeheer.nl/web/jaarprogramma?d=<bond>&s=<seizoen>&div=<poule>`
 op — een HTML-pagina, geen API — en parst per speelweek de tabel met datum,
