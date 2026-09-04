@@ -26,3 +26,8 @@ class AccountOption(BaseModel):
 class EnterRequest(BaseModel):
     user_id: int
     unlock_password: str | None = None
+
+
+class ChangePasswordRequest(BaseModel):
+    huidig_wachtwoord: str
+    nieuw_wachtwoord: str

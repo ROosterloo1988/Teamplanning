@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, require_beheer, require_team_access
+from app.api.deps import get_current_user, require_beheer, require_captain, require_team_access
 from app.core.security import (
     create_access_token,
     create_team_token,
@@ -14,6 +14,7 @@ from app.models.enums import UserRole
 from app.models.user import User
 from app.schemas.auth import (
     AccountOption,
+    ChangePasswordRequest,
     EnterRequest,
     LoginRequest,
     TeamAccessRequest,
@@ -86,6 +87,27 @@ def update_team_password(payload: TeamAccessRequest, db: Session = Depends(get_d
         db.add(setting)
     else:
         setting.team_password_hash = hash_password(payload.password)
+    db.commit()
+    return {"status": "ok"}
+
+
+@router.put("/me/password", dependencies=[Depends(require_captain)])
+def change_own_password(
+    payload: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Captain/beheer wijzigt hier het eigen ontgrendelwachtwoord, zonder
+    tussenkomst van Beheer > Spelers."""
+    if not verify_password(payload.huidig_wachtwoord, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Huidig wachtwoord is onjuist"
+        )
+    if not payload.nieuw_wachtwoord:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Nieuw wachtwoord mag niet leeg zijn"
+        )
+    current_user.hashed_password = hash_password(payload.nieuw_wachtwoord)
     db.commit()
     return {"status": "ok"}
 

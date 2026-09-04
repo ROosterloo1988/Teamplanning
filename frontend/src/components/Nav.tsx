@@ -29,6 +29,11 @@ export function Nav() {
         </Link>
       </div>
       <div className="flex items-center gap-3">
+        {(user.rol === "CAPTAIN" || user.rol === "BEHEER") && (
+          <Link href="/account" className="text-sm text-gray-500 hover:text-gray-800" title="Mijn account">
+            ⚙️
+          </Link>
+        )}
         <NotificationBell />
         <button onClick={logout} className="text-sm text-gray-500 hover:text-gray-800">
           Uitloggen

@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { AuditLogOut, AvailabilityWithPlayer, LineupOut, MatchOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
-import { formatMatchDate, LocatieLink, StatusBadge } from "@/components/StatusBadge";
+import { formatMatchDate, LocatieLink, mapsUrl, StatusBadge } from "@/components/StatusBadge";
 import { AuditLogList } from "@/components/AuditLogList";
 
 export default function CaptainMatchDetailPage() {
@@ -101,7 +101,7 @@ export default function CaptainMatchDetailPage() {
       `🎯 Opstelling ${match.thuisteam} - ${match.uitteam}`,
       formatMatchDate(match.datum),
     ];
-    if (match.locatie) lines.push(`📍 ${match.locatie}`);
+    if (match.locatie) lines.push(`📍 ${match.locatie}`, mapsUrl(match.locatie));
     lines.push("");
     lines.push(
       ...(spelers.length > 0 ? spelers.map((naam) => `- ${naam}`) : ["(nog niemand geselecteerd)"])
