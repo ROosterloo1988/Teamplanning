@@ -52,7 +52,7 @@ export default function BeheerSpelersPage() {
     try {
       await api.post("/players/with-account", {
         naam: form.naam,
-        email: form.email,
+        email: form.email.trim() || undefined,
         password: form.rol === "SPELER" ? undefined : form.password,
         rol: form.rol,
         team_id: form.team_id ? Number(form.team_id) : null,
@@ -93,9 +93,8 @@ export default function BeheerSpelersPage() {
           className="w-full rounded-lg border border-gray-300 px-3 py-2"
         />
         <input
-          placeholder="E-mailadres"
+          placeholder="E-mailadres (optioneel)"
           type="email"
-          required
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           className="w-full rounded-lg border border-gray-300 px-3 py-2"

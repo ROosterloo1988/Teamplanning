@@ -9,8 +9,14 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
 - Spelers loggen in, zien hun eerstvolgende wedstrijd en geven beschikbaarheid
   door (Ja / Nee / Indien nodig).
 - Captains zien de beschikbaarheid per wedstrijd, stellen een opstelling samen
-  en publiceren die naar de spelers.
+  en publiceren die naar de spelers. "Publiceren" verstuurt niets extern (geen
+  e-mail): het zet de opstelling zichtbaar voor spelers in de app en maakt een
+  in-app melding. Voor de WhatsApp-groep staat er een aparte knop "📋 Kopieer
+  opstelling voor WhatsApp" die een kant-en-klaar tekstberichtje (wedstrijd,
+  datum, locatie, geselecteerde spelers) naar het klembord kopieert.
 - Beheer beheert spelers en wedstrijden, en importeert de bestaande Excel-planning.
+  E-mailadres is optioneel per speler (alleen nodig als je het echt wilt
+  bijhouden — voor inloggen of publiceren is het niet vereist).
 
 **Fase 2** (ontwerp sectie 16):
 

@@ -14,7 +14,7 @@ export interface AccountOption {
 export interface UserOut {
   id: number;
   naam: string;
-  email: string;
+  email: string | null;
   rol: UserRole;
   actief: boolean;
   player_id: number | null;

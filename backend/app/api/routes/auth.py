@@ -34,7 +34,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Onjuiste inloggegevens")
     if not user.actief:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is niet actief")
-    token = create_access_token(subject=user.email)
+    token = create_access_token(subject=str(user.id))
     return Token(access_token=token)
 
 
@@ -74,7 +74,7 @@ def enter(payload: EnterRequest, db: Session = Depends(get_db)):
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Onjuist ontgrendelwachtwoord"
             )
 
-    return Token(access_token=create_access_token(subject=user.email))
+    return Token(access_token=create_access_token(subject=str(user.id)))
 
 
 @router.put("/team-password", dependencies=[Depends(require_beheer)])

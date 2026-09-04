@@ -5,7 +5,7 @@ from app.models.enums import UserRole
 
 class UserBase(BaseModel):
     naam: str
-    email: EmailStr
+    email: EmailStr | None = None
     rol: UserRole = UserRole.SPELER
     actief: bool = True
 

@@ -24,7 +24,11 @@ def get_current_user(
     payload = decode_token(token)
     if not payload or payload.get("type") != "user":
         raise _credentials_exception
-    user = db.query(User).filter(User.email == payload.get("sub")).first()
+    try:
+        user_id = int(payload.get("sub"))
+    except (TypeError, ValueError):
+        raise _credentials_exception
+    user = db.query(User).filter(User.id == user_id).first()
     if not user or not user.actief:
         raise _credentials_exception
     return user

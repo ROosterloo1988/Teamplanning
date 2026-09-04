@@ -32,7 +32,7 @@ def create_player(payload: PlayerCreate, db: Session = Depends(get_db)):
 @router.post("/with-account", response_model=UserOut, dependencies=[Depends(require_beheer)])
 def create_player_with_account(payload: UserCreate, db: Session = Depends(get_db)):
     """Maak in één stap een gebruiker + bijbehorende speler aan (Beheer > Spelers)."""
-    if db.query(User).filter(User.email == payload.email).first():
+    if payload.email and db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="E-mailadres al in gebruik")
 
     if payload.rol in (UserRole.CAPTAIN, UserRole.BEHEER):
