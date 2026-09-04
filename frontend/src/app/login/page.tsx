@@ -97,6 +97,12 @@ export default function LoginPage() {
     await doEnter(selected.id, selected.rol, unlockPassword);
   }
 
+  // Spelers zijn de grote, prominente knoppen (dat kiest bijna iedereen);
+  // captain/beheerder staan er als kleinere sectie onderaan bij, zodat de
+  // beheerder niet meer even groot tussen de spelers staat.
+  const spelers = (accounts ?? []).filter((a) => a.rol === "SPELER");
+  const overigen = (accounts ?? []).filter((a) => a.rol !== "SPELER");
+
   if (checkingTeamToken) {
     return <div className="py-10 text-center text-gray-400">🎯 Laden...</div>;
   }
@@ -138,43 +144,102 @@ export default function LoginPage() {
         <div className="w-full max-w-xs">
           <p className="mb-4 text-center text-gray-500">Ik ben:</p>
           <ul className="space-y-2">
-            {accounts.map((account) => (
-              <li key={account.id}>
-                <button
-                  onClick={() => pickAccount(account)}
-                  disabled={entering}
-                  className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left font-medium hover:bg-gray-50 disabled:opacity-50"
-                >
-                  {account.naam}
-                  {account.rol !== "SPELER" && <span aria-label="ontgrendelwachtwoord nodig">🔒</span>}
-                </button>
-
-                {selected?.id === account.id && (
-                  <form onSubmit={handleUnlockSubmit} className="mt-2 space-y-2 pl-1">
-                    <input
-                      type="password"
-                      placeholder="Ontgrendelwachtwoord"
-                      required
-                      autoFocus
-                      value={unlockPassword}
-                      onChange={(e) => setUnlockPassword(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
-                    />
-                    <button
-                      type="submit"
-                      disabled={entering}
-                      className="w-full rounded-lg bg-brand py-1.5 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
-                    >
-                      {entering ? "Bezig..." : "Ontgrendelen"}
-                    </button>
-                  </form>
-                )}
-              </li>
+            {spelers.map((account) => (
+              <AccountRow
+                key={account.id}
+                account={account}
+                selected={selected}
+                entering={entering}
+                unlockPassword={unlockPassword}
+                setUnlockPassword={setUnlockPassword}
+                onPick={pickAccount}
+                onUnlockSubmit={handleUnlockSubmit}
+              />
             ))}
           </ul>
+
+          {overigen.length > 0 && (
+            <>
+              <p className="mb-2 mt-6 text-center text-xs text-gray-400">Captain / beheerder</p>
+              <ul className="space-y-1.5">
+                {overigen.map((account) => (
+                  <AccountRow
+                    key={account.id}
+                    account={account}
+                    selected={selected}
+                    entering={entering}
+                    unlockPassword={unlockPassword}
+                    setUnlockPassword={setUnlockPassword}
+                    onPick={pickAccount}
+                    onUnlockSubmit={handleUnlockSubmit}
+                    compact
+                  />
+                ))}
+              </ul>
+            </>
+          )}
+
           {enterError && <p className="mt-3 text-center text-sm text-red-600">{enterError}</p>}
         </div>
       )}
     </div>
+  );
+}
+
+function AccountRow({
+  account,
+  selected,
+  entering,
+  unlockPassword,
+  setUnlockPassword,
+  onPick,
+  onUnlockSubmit,
+  compact = false,
+}: {
+  account: AccountOption;
+  selected: AccountOption | null;
+  entering: boolean;
+  unlockPassword: string;
+  setUnlockPassword: (value: string) => void;
+  onPick: (account: AccountOption) => void;
+  onUnlockSubmit: (e: React.FormEvent) => void;
+  compact?: boolean;
+}) {
+  return (
+    <li>
+      <button
+        onClick={() => onPick(account)}
+        disabled={entering}
+        className={
+          compact
+            ? "flex w-full items-center justify-between rounded-lg border border-gray-200 px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            : "flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left font-medium hover:bg-gray-50 disabled:opacity-50"
+        }
+      >
+        {account.naam}
+        {account.rol !== "SPELER" && <span aria-label="ontgrendelwachtwoord nodig">🔒</span>}
+      </button>
+
+      {selected?.id === account.id && (
+        <form onSubmit={onUnlockSubmit} className="mt-2 space-y-2 pl-1">
+          <input
+            type="password"
+            placeholder="Ontgrendelwachtwoord"
+            required
+            autoFocus
+            value={unlockPassword}
+            onChange={(e) => setUnlockPassword(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={entering}
+            className="w-full rounded-lg bg-brand py-1.5 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+          >
+            {entering ? "Bezig..." : "Ontgrendelen"}
+          </button>
+        </form>
+      )}
+    </li>
   );
 }
