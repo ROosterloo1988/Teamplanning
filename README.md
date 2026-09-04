@@ -60,9 +60,11 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
 - **Wedstrijdhistorie**: **Geschiedenis** (voor alle rollen) toont afgelopen
   wedstrijden met de gepubliceerde opstelling, filterbaar per seizoen.
 - **Overzicht** (voor alle rollen): een alleen-lezen matrix van wedstrijd ×
-  speler met per cel een kleurenbolletje (🟢/🔴/🟡/⚪), zodat spelers
-  onderling kunnen zien wie wel of niet kan — handig om een ruil te
-  regelen. Filterbaar per seizoen en standaard alleen komende wedstrijden.
+  speler met per cel een kleurenbolletje (🟢/🔴/🟡/⚪) plus een ⭐ als die
+  speler ook echt in de gepubliceerde opstelling staat — zo zie je in één
+  oogopslag het verschil tussen "kan" en "kan én staat opgesteld", handig
+  om onderling een ruil te regelen. Filterbaar per seizoen en standaard
+  alleen komende wedstrijden.
 - **In-app notificatiecentrum**: een bel-icoon met ongelezen-badge in de
   navigatie en een **Meldingen**-pagina. Spelers met een account krijgen een
   melding bij een nieuwe wedstrijd en bij een gepubliceerde opstelling.

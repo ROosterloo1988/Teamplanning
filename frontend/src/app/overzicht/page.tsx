@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { AvailabilityWithPlayer, MatchOut, SeasonOut } from "@/lib/types";
+import { AvailabilityWithPlayer, LineupOut, MatchOut, SeasonOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
 import { formatMatchDateShort, StatusDot } from "@/components/StatusBadge";
 
@@ -18,6 +18,7 @@ export default function OverzichtPage() {
   const router = useRouter();
   const [matches, setMatches] = useState<MatchOut[]>([]);
   const [availability, setAvailability] = useState<AvailabilityWithPlayer[]>([]);
+  const [lineups, setLineups] = useState<Map<number, Set<number>>>(new Map());
   const [seasons, setSeasons] = useState<SeasonOut[]>([]);
   const [seasonFilter, setSeasonFilter] = useState("");
   const [upcomingOnly, setUpcomingOnly] = useState(true);
@@ -32,8 +33,20 @@ export default function OverzichtPage() {
       api.get<MatchOut[]>(`/matches${query}`),
       api.get<AvailabilityWithPlayer[]>(`/availability/overview${query}`),
     ]);
-    setMatches([...matchesData].sort((a, b) => a.datum.localeCompare(b.datum)));
+    const sortedMatches = [...matchesData].sort((a, b) => a.datum.localeCompare(b.datum));
+    setMatches(sortedMatches);
     setAvailability(availabilityData);
+
+    const lineupResults = await Promise.all(
+      sortedMatches.map((match) =>
+        api.get<LineupOut>(`/lineups/match/${match.id}`).catch(() => null)
+      )
+    );
+    const lineupMap = new Map<number, Set<number>>();
+    lineupResults.forEach((result) => {
+      if (result && result.published) lineupMap.set(result.match_id, new Set(result.player_ids));
+    });
+    setLineups(lineupMap);
   }, []);
 
   useEffect(() => {
@@ -99,6 +112,7 @@ export default function OverzichtPage() {
 
       <p className="mb-3 text-xs text-gray-500">
         🟢 Kan &nbsp;·&nbsp; 🔴 Kan niet &nbsp;·&nbsp; 🟡 Indien nodig &nbsp;·&nbsp; ⚪ Geen antwoord
+        &nbsp;·&nbsp; ⭐ Opgesteld
       </p>
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
@@ -124,9 +138,11 @@ export default function OverzichtPage() {
                 </td>
                 {players.map((p) => {
                   const a = byMatchAndPlayer.get(`${match.id}-${p.id}`);
+                  const opgesteld = lineups.get(match.id)?.has(p.id) ?? false;
                   return (
-                    <td key={p.id} className="px-2 py-2 text-center">
+                    <td key={p.id} className="whitespace-nowrap px-2 py-2 text-center">
                       <StatusDot status={a?.status ?? "NO_RESPONSE"} />
+                      {opgesteld && <span title="Opgesteld">⭐</span>}
                     </td>
                   );
                 })}
