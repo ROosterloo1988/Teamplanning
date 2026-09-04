@@ -21,6 +21,10 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
   selecteerbaar, ook wie eerder "kan niet" aangaf, voor een late wissel.
   Statistieken (**Beheer → Statistieken**, "keer opgesteld") tellen live mee,
   dus die blijven altijd kloppen met de laatst opgeslagen opstelling.
+- Beschikbaarheid en opstelling staan bij de captain in één compacte tabel:
+  per speler de status (kan / kan niet / indien nodig) en een ster (★) om
+  die speler in de opstelling te zetten, in plaats van twee aparte lijsten
+  onder elkaar.
 - **Beheer → Spelers** beheert spelers: aanmaken, naam/rol/e-mailadres/actief
   bewerken, ontgrendelwachtwoord wijzigen en verwijderen. E-mailadres is
   optioneel (alleen nodig als je het echt wilt bijhouden — voor inloggen of
@@ -162,7 +166,9 @@ Zodra een wedstrijd gespeeld is, staat de uitslag (bv. `7-2`) ook gewoon op
 de jaarprogramma-pagina — die wordt bij elke sync meegenomen: de
 wedstrijdstatus gaat automatisch naar "Gespeeld" en de uitslag is te zien in
 **Geschiedenis** en **Beheer → Wedstrijden** (en daar ook handmatig te
-corrigeren, mocht dat nodig zijn).
+corrigeren, mocht dat nodig zijn). Is de uitslag op de feed een link naar het
+officiële wedstrijdformulier, dan is de uitslag in de app ook meteen
+doorklikbaar naar die pagina.
 
 Daarbij haalt de app ook `/web/teams` (team → speelgelegenheid) en
 `/web/speelgelegenheden` (speelgelegenheid → adres) op om de locatie van

@@ -289,7 +289,24 @@ export default function BeheerTeambeheerPage() {
                     <td className="px-3 py-2">
                       {f.locatie ? <LocatieLink locatie={f.locatie} /> : "—"}
                     </td>
-                    <td className="px-3 py-2">{f.uitslag ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      {f.uitslag ? (
+                        f.uitslag_url ? (
+                          <a
+                            href={f.uitslag_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-brand hover:underline"
+                          >
+                            {f.uitslag}
+                          </a>
+                        ) : (
+                          f.uitslag
+                        )
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td className="px-3 py-2">{STATUS_LABELS[f.status] ?? f.status}</td>
                   </tr>
                 ))}

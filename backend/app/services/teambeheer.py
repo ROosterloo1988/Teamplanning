@@ -46,6 +46,10 @@ class TeambeheerFixture:
     uit_id: int
     uit_naam: str
     score: str
+    # Zodra een wedstrijd officieel is afgehandeld, is de score-cel een link
+    # naar het wedstrijdformulier (/web/wedstrijdformulier/?d=&w=&s=) — een
+    # handmatig ingevulde score zonder formulier is gewoon platte tekst.
+    score_url: str | None = None
 
 
 @dataclass
@@ -168,7 +172,14 @@ def parse_jaarprogramma(html: str) -> list[TeambeheerFixture]:
             uit_id = _team_id_from_href(uit_a.get("href", ""))
             if thuis_id is None or uit_id is None:
                 continue
-            score = cells[3].get_text(strip=True) if len(cells) > 3 else ""
+            score_cell = cells[3] if len(cells) > 3 else None
+            score = score_cell.get_text(strip=True) if score_cell else ""
+            score_a = score_cell.find("a") if score_cell else None
+            score_url = (
+                f"{settings.TEAMBEHEER_BASE_URL}{score_a['href']}"
+                if score_a and score_a.get("href")
+                else None
+            )
 
             fixtures.append(
                 TeambeheerFixture(
@@ -179,6 +190,7 @@ def parse_jaarprogramma(html: str) -> list[TeambeheerFixture]:
                     uit_id=uit_id,
                     uit_naam=uit_a.get_text(strip=True),
                     score=score,
+                    score_url=score_url,
                 )
             )
 
@@ -295,6 +307,7 @@ def preview_team_fixtures(db: Session, config: TeambeheerConfig, season: Season)
                 "uitteam": fixture.uit_naam.strip(),
                 "locatie": venue_addresses.get(fixture.thuis_id),
                 "uitslag": fixture.score.strip() or None,
+                "uitslag_url": fixture.score_url,
                 "status": status,
             }
         )
@@ -332,6 +345,7 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
         uitteam = fixture.uit_naam.strip()
         locatie = venue_addresses.get(fixture.thuis_id)
         uitslag = fixture.score.strip() or None
+        uitslag_url = fixture.score_url
         external_id = _external_id(config, s_code, fixture)
 
         match = db.query(Match).filter(Match.external_id == external_id).first()
@@ -339,7 +353,9 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
             schedule_changed = (
                 match.datum != datum or match.thuisteam != thuisteam or match.uitteam != uitteam
             )
-            uitslag_changed = bool(uitslag) and match.uitslag != uitslag
+            uitslag_changed = bool(uitslag) and (
+                match.uitslag != uitslag or match.uitslag_url != uitslag_url
+            )
 
             if schedule_changed:
                 old_datum = match.datum
@@ -355,6 +371,7 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
                 )
             if uitslag_changed:
                 match.uitslag = uitslag
+                match.uitslag_url = uitslag_url
                 match.status = MatchStatus.GESPEELD
 
             if schedule_changed or uitslag_changed:
@@ -377,6 +394,7 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
             uitteam=uitteam,
             locatie=locatie,
             uitslag=uitslag,
+            uitslag_url=uitslag_url,
             status=MatchStatus.GESPEELD if uitslag else MatchStatus.GEPLAND,
         )
         db.add(match)

@@ -31,6 +31,17 @@ def test_parse_speelweek_1_row_count_and_score():
     mila_row = next(f for f in fixtures if f.thuis_naam == "MILA B")
     assert mila_row.uit_naam == "Woodpeckers 1"
     assert mila_row.score == "-7"
+    assert mila_row.score_url is None  # plat tekst-scorecel, geen wedstrijdformulier-link
+
+
+def test_parse_score_url_from_wedstrijdformulier_link():
+    """Een afgehandelde wedstrijd heeft een score-cel die naar het officiele
+    wedstrijdformulier linkt (/web/wedstrijdformulier/?d=&w=&s=), niet zomaar
+    platte tekst."""
+    fixtures = [f for f in parse_jaarprogramma(FULL_SEASON_FIXTURE.read_text()) if f.speelweek == 1]
+    linked_row = next(f for f in fixtures if f.thuis_naam == "Mansier Zittie?")
+    assert linked_row.score == "7-2"
+    assert linked_row.score_url == "https://feeds.teambeheer.nl/web/wedstrijdformulier/?d=11&w=3135387&s=26-27"
 
 
 def test_de_gouv_appears_as_thuis_and_uit():
