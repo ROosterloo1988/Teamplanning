@@ -22,6 +22,7 @@ export default function CaptainMatchDetailPage() {
   const [history, setHistory] = useState<AuditLogOut[]>([]);
   const [fetching, setFetching] = useState(true);
   const [publishing, setPublishing] = useState(false);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
 
   const load = useCallback(async () => {
     setFetching(true);
@@ -83,6 +84,39 @@ export default function CaptainMatchDetailPage() {
       await refreshHistory();
     } finally {
       setPublishing(false);
+    }
+  }
+
+  // Geen e-mail of andere verzending: de captain plakt dit zelf in de
+  // WhatsApp-groep. Gebaseerd op de huidige selectie, niet pas na publiceren,
+  // zodat er ook een concept-tekst gekopieerd kan worden.
+  function buildWhatsAppText(): string {
+    if (!match) return "";
+    const spelers = availability
+      .filter((a) => selected.has(a.player_id))
+      .map((a) => a.player_naam)
+      .sort((a, b) => a.localeCompare(b));
+
+    const lines = [
+      `🎯 Opstelling ${match.thuisteam} - ${match.uitteam}`,
+      formatMatchDate(match.datum),
+    ];
+    if (match.locatie) lines.push(`📍 ${match.locatie}`);
+    lines.push("");
+    lines.push(
+      ...(spelers.length > 0 ? spelers.map((naam) => `- ${naam}`) : ["(nog niemand geselecteerd)"])
+    );
+    return lines.join("\n");
+  }
+
+  async function copyForWhatsApp() {
+    try {
+      await navigator.clipboard.writeText(buildWhatsAppText());
+      setCopyState("copied");
+    } catch {
+      setCopyState("error");
+    } finally {
+      setTimeout(() => setCopyState("idle"), 2500);
     }
   }
 
@@ -158,6 +192,17 @@ export default function CaptainMatchDetailPage() {
       {lineup?.published && (
         <p className="mt-3 text-sm text-green-700">✅ Opstelling is gepubliceerd naar spelers</p>
       )}
+
+      <button
+        onClick={copyForWhatsApp}
+        className="mt-3 w-full rounded-lg border border-gray-300 py-2 font-medium text-gray-700 hover:bg-gray-50"
+      >
+        {copyState === "copied"
+          ? "✅ Gekopieerd — plak 'm in WhatsApp"
+          : copyState === "error"
+            ? "⚠️ Kopiëren mislukt, probeer opnieuw"
+            : "📋 Kopieer opstelling voor WhatsApp"}
+      </button>
 
       <details className="mt-8">
         <summary className="cursor-pointer font-medium text-gray-700">

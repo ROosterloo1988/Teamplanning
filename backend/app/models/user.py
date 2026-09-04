@@ -12,7 +12,7 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     naam: Mapped[str] = mapped_column(String(120), nullable=False)
-    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    email: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     rol: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.SPELER, nullable=False)
     actief: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

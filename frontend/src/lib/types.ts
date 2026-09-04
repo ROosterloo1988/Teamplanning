@@ -14,22 +14,15 @@ export interface AccountOption {
 export interface UserOut {
   id: number;
   naam: string;
-  email: string;
+  email: string | null;
   rol: UserRole;
   actief: boolean;
   player_id: number | null;
 }
 
-export interface TeamOut {
-  id: number;
-  naam: string;
-  vereniging: string | null;
-}
-
 export interface PlayerOut {
   id: number;
   naam: string;
-  team_id: number | null;
   user_id: number | null;
 }
 

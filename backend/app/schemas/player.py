@@ -3,7 +3,6 @@ from pydantic import BaseModel, ConfigDict
 
 class PlayerBase(BaseModel):
     naam: str
-    team_id: int | None = None
 
 
 class PlayerCreate(PlayerBase):
