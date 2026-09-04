@@ -69,6 +69,9 @@ export default function LoginPage() {
     setUnlockPassword("");
     if (account.rol === "SPELER") {
       void doEnter(account.id, account.rol);
+    } else if (selected?.id === account.id) {
+      // Nogmaals op dezelfde naam tikken sluit het ontgrendelformulier weer.
+      setSelected(null);
     } else {
       setSelected(account);
     }
@@ -231,13 +234,23 @@ function AccountRow({
             onChange={(e) => setUnlockPassword(e.target.value)}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
           />
-          <button
-            type="submit"
-            disabled={entering}
-            className="w-full rounded-lg bg-brand py-1.5 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
-          >
-            {entering ? "Bezig..." : "Ontgrendelen"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={entering}
+              className="flex-1 rounded-lg bg-brand py-1.5 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+            >
+              {entering ? "Bezig..." : "Ontgrendelen"}
+            </button>
+            <button
+              type="button"
+              onClick={() => onPick(account)}
+              disabled={entering}
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Annuleren
+            </button>
+          </div>
         </form>
       )}
     </li>
