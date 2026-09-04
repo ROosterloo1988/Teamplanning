@@ -12,7 +12,7 @@ export default function BeheerSeizoenenPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [seasons, setSeasons] = useState<SeasonOut[]>([]);
-  const [form, setForm] = useState({ naam: "", startjaar: "", eindjaar: "" });
+  const [form, setForm] = useState({ naam: "", startjaar: "" });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [activating, setActivating] = useState<number | null>(null);
@@ -43,9 +43,8 @@ export default function BeheerSeizoenenPage() {
       await api.post("/seasons", {
         naam: form.naam,
         startjaar: Number(form.startjaar),
-        eindjaar: Number(form.eindjaar),
       });
-      setForm({ naam: "", startjaar: "", eindjaar: "" });
+      setForm({ naam: "", startjaar: "" });
       await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Opslaan mislukt");
@@ -114,24 +113,15 @@ export default function BeheerSeizoenenPage() {
           onChange={(e) => setForm({ ...form, naam: e.target.value })}
           className="w-full rounded-lg border border-gray-300 px-3 py-2"
         />
-        <div className="flex gap-3">
-          <input
-            type="number"
-            placeholder="Startjaar"
-            required
-            value={form.startjaar}
-            onChange={(e) => setForm({ ...form, startjaar: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2"
-          />
-          <input
-            type="number"
-            placeholder="Eindjaar"
-            required
-            value={form.eindjaar}
-            onChange={(e) => setForm({ ...form, eindjaar: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2"
-          />
-        </div>
+        <input
+          type="number"
+          placeholder="Startjaar (bv. 2026 voor seizoen 2026-2027)"
+          required
+          value={form.startjaar}
+          onChange={(e) => setForm({ ...form, startjaar: e.target.value })}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2"
+        />
+        <p className="text-sm text-gray-500">Eindjaar wordt automatisch startjaar + 1.</p>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 

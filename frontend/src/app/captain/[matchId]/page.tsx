@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { AuditLogOut, AvailabilityWithPlayer, LineupOut, MatchOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
-import { formatMatchDate, StatusBadge } from "@/components/StatusBadge";
+import { formatMatchDate, LocatieLink, StatusBadge } from "@/components/StatusBadge";
 import { AuditLogList } from "@/components/AuditLogList";
 
 export default function CaptainMatchDetailPage() {
@@ -132,7 +132,12 @@ export default function CaptainMatchDetailPage() {
       <h1 className="mb-1 text-xl font-bold capitalize">{formatMatchDate(match.datum)}</h1>
       <p className="mb-6 text-gray-500">
         {match.thuisteam} – {match.uitteam}
-        {match.locatie && ` · 📍 ${match.locatie}`}
+        {match.locatie && (
+          <>
+            {" · "}
+            <LocatieLink locatie={match.locatie} />
+          </>
+        )}
       </p>
 
       <h2 className="mb-3 font-medium">Beschikbaarheid</h2>
@@ -157,11 +162,14 @@ export default function CaptainMatchDetailPage() {
       <p className="mb-6 text-sm text-gray-500">{beschikbaarAantal} spelers beschikbaar</p>
 
       <h2 className="mb-3 font-medium">Opstelling</h2>
+      <p className="mb-2 text-sm text-gray-500">
+        Iedereen is selecteerbaar — ook wie "kan niet" heeft aangegeven, voor als er achteraf
+        toch nog gewisseld moet worden.
+      </p>
       <div className="mb-2 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white">
-        {availability
-          .filter((a) => a.status !== "UNAVAILABLE")
-          .map((a) => (
-            <label key={a.player_id} className="flex items-center gap-3 px-4 py-3 text-sm">
+        {availability.map((a) => (
+          <label key={a.player_id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+            <span className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={selected.has(a.player_id)}
@@ -169,8 +177,10 @@ export default function CaptainMatchDetailPage() {
                 className="h-4 w-4"
               />
               {a.player_naam}
-            </label>
-          ))}
+            </span>
+            <StatusBadge status={a.status} />
+          </label>
+        ))}
       </div>
       <p className="mb-6 text-sm text-gray-500">{selected.size} / 4 opgesteld</p>
 

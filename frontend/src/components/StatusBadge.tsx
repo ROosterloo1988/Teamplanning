@@ -32,3 +32,24 @@ export function formatMatchDateShort(datum: string): string {
   const date = new Date(datum + "T00:00:00");
   return date.toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
 }
+
+export function mapsUrl(locatie: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locatie)}`;
+}
+
+// Locatie als tikbare Google Maps-link — werkt met een volledig adres of
+// alleen een zaalnaam, zodat je er meteen mee kunt navigeren.
+export function LocatieLink({ locatie }: { locatie: string | null }) {
+  if (!locatie) return null;
+  return (
+    <a
+      href={mapsUrl(locatie)}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-brand hover:underline"
+      onClick={(e) => e.stopPropagation()}
+    >
+      📍 {locatie}
+    </a>
+  );
+}

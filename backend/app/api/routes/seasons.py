@@ -16,7 +16,7 @@ def list_seasons(db: Session = Depends(get_db), _=Depends(get_current_user)):
 
 @router.post("", response_model=SeasonOut, dependencies=[Depends(require_beheer)])
 def create_season(payload: SeasonCreate, db: Session = Depends(get_db)):
-    season = Season(**payload.model_dump())
+    season = Season(naam=payload.naam, startjaar=payload.startjaar, eindjaar=payload.startjaar + 1)
     db.add(season)
     db.commit()
     db.refresh(season)

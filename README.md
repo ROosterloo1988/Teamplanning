@@ -14,10 +14,19 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
   in-app melding. Voor de WhatsApp-groep staat er een aparte knop "📋 Kopieer
   opstelling voor WhatsApp" die een kant-en-klaar tekstberichtje (wedstrijd,
   datum, locatie, geselecteerde spelers) naar het klembord kopieert.
+- De opstelling is ook achteraf aan te passen — ook voor al gespeelde
+  wedstrijden (via **Geschiedenis → Opstelling aanpassen**) en met iedereen
+  selecteerbaar, ook wie eerder "kan niet" aangaf, voor een late wissel.
+  Statistieken (**Beheer → Statistieken**, "keer opgesteld") tellen live mee,
+  dus die blijven altijd kloppen met de laatst opgeslagen opstelling.
 - **Beheer → Spelers** beheert spelers: aanmaken, naam/rol/e-mailadres/actief
   bewerken, ontgrendelwachtwoord wijzigen en verwijderen. E-mailadres is
   optioneel (alleen nodig als je het echt wilt bijhouden — voor inloggen of
   publiceren is het niet vereist).
+- **Beheer → Wedstrijden** laat bestaande wedstrijden bewerken (datum, teams,
+  locatie, type, seizoen). Een locatie is meteen een tikbare Google
+  Maps-link (op elk scherm waar de locatie getoond wordt) — vul bij voorkeur
+  het volledige adres in, dan kun je er direct mee navigeren.
 
 **Fase 2** (ontwerp sectie 16):
 
@@ -36,7 +45,9 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
 - **Seizoenen**: **Beheer → Seizoenen** beheert seizoenen en wijst er één als
   actief aan; nieuwe wedstrijden krijgen automatisch het actieve seizoen.
   Wedstrijden, statistieken en de wedstrijdhistorie zijn filterbaar per
-  seizoen.
+  seizoen. Je geeft alleen het startjaar op (bv. `2026`) — het eindjaar is
+  altijd startjaar + 1 en wordt automatisch berekend, dat kan niet meer per
+  ongeluk fout ingevuld worden.
 - **Wedstrijdhistorie**: **Geschiedenis** (voor alle rollen) toont afgelopen
   wedstrijden met de gepubliceerde opstelling, filterbaar per seizoen.
 - **In-app notificatiecentrum**: een bel-icoon met ongelezen-badge in de

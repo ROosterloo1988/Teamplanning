@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { LineupOut, MatchOut, SeasonOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
-import { formatMatchDate } from "@/components/StatusBadge";
+import { formatMatchDate, LocatieLink } from "@/components/StatusBadge";
 
 export default function GeschiedenisPage() {
   const { user, loading } = useAuth();
@@ -91,7 +92,8 @@ export default function GeschiedenisPage() {
                 </span>
               </button>
               {expanded === match.id && (
-                <div className="border-t border-gray-100 bg-gray-50 px-4 py-3 text-sm">
+                <div className="space-y-2 border-t border-gray-100 bg-gray-50 px-4 py-3 text-sm">
+                  {match.locatie && <LocatieLink locatie={match.locatie} />}
                   {!lineup && <p className="text-gray-400">Laden...</p>}
                   {lineup && lineup.published && lineup.player_naam.length > 0 && (
                     <p>
@@ -101,6 +103,11 @@ export default function GeschiedenisPage() {
                   )}
                   {lineup && (!lineup.published || lineup.player_naam.length === 0) && (
                     <p className="text-gray-400">Geen opstelling gepubliceerd.</p>
+                  )}
+                  {user && (user.rol === "CAPTAIN" || user.rol === "BEHEER") && (
+                    <Link href={`/captain/${match.id}`} className="inline-block text-brand hover:underline">
+                      Opstelling aanpassen →
+                    </Link>
                   )}
                 </div>
               )}
