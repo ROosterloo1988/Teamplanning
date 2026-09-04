@@ -173,49 +173,49 @@ export default function CaptainMatchDetailPage() {
         )}
       </p>
 
-      <h2 className="mb-3 font-medium">Beschikbaarheid</h2>
+      <h2 className="mb-3 font-medium">Spelers</h2>
+      <p className="mb-2 text-sm text-gray-500">
+        Tik op de ster om iemand in de opstelling te zetten — ook wie "kan niet" heeft
+        aangegeven, voor als er achteraf toch nog gewisseld moet worden.
+      </p>
       <table className="mb-2 w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-sm">
         <thead className="bg-gray-50 text-left text-gray-500">
           <tr>
             <th className="px-4 py-2 font-medium">Speler</th>
             <th className="px-4 py-2 font-medium">Status</th>
+            <th className="px-4 py-2 text-center font-medium">Opstelling</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {availability.map((a) => (
-            <tr key={a.id}>
-              <td className="px-4 py-2">{a.player_naam}</td>
-              <td className="px-4 py-2">
-                <StatusBadge status={a.status} />
-              </td>
-            </tr>
-          ))}
+          {availability.map((a) => {
+            const inLineup = selected.has(a.player_id);
+            return (
+              <tr key={a.id}>
+                <td className="px-4 py-2">{a.player_naam}</td>
+                <td className="px-4 py-2">
+                  <StatusBadge status={a.status} />
+                </td>
+                <td className="px-4 py-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() => toggle(a.player_id)}
+                    aria-pressed={inLineup}
+                    aria-label={
+                      inLineup ? `${a.player_naam} uit opstelling halen` : `${a.player_naam} in opstelling zetten`
+                    }
+                    className={`text-xl leading-none ${inLineup ? "text-yellow-500" : "text-gray-300 hover:text-gray-400"}`}
+                  >
+                    {inLineup ? "★" : "☆"}
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
-      <p className="mb-6 text-sm text-gray-500">{beschikbaarAantal} spelers beschikbaar</p>
-
-      <h2 className="mb-3 font-medium">Opstelling</h2>
-      <p className="mb-2 text-sm text-gray-500">
-        Iedereen is selecteerbaar — ook wie "kan niet" heeft aangegeven, voor als er achteraf
-        toch nog gewisseld moet worden.
+      <p className="mb-6 text-sm text-gray-500">
+        {beschikbaarAantal} spelers beschikbaar · {selected.size} / 4 opgesteld
       </p>
-      <div className="mb-2 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white">
-        {availability.map((a) => (
-          <label key={a.player_id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-            <span className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={selected.has(a.player_id)}
-                onChange={() => toggle(a.player_id)}
-                className="h-4 w-4"
-              />
-              {a.player_naam}
-            </span>
-            <StatusBadge status={a.status} />
-          </label>
-        ))}
-      </div>
-      <p className="mb-6 text-sm text-gray-500">{selected.size} / 4 opgesteld</p>
 
       <div className="flex gap-3">
         <button

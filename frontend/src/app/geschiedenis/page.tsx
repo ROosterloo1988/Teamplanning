@@ -82,22 +82,32 @@ export default function GeschiedenisPage() {
           const lineup = lineups[match.id];
           return (
             <li key={match.id}>
-              <button
-                onClick={() => toggleExpand(match.id)}
-                className="flex w-full flex-col gap-1 px-4 py-3 text-left hover:bg-gray-50"
-              >
-                <span className="text-sm text-gray-500 capitalize">{formatMatchDate(match.datum)}</span>
-                <span className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 px-4 py-3 hover:bg-gray-50">
+                <button
+                  onClick={() => toggleExpand(match.id)}
+                  className="flex flex-1 flex-col gap-1 text-left"
+                >
+                  <span className="text-sm text-gray-500 capitalize">{formatMatchDate(match.datum)}</span>
                   <span className="font-medium">
                     {match.thuisteam} - {match.uitteam}
                   </span>
-                  {match.uitslag && (
+                </button>
+                {match.uitslag &&
+                  (match.uitslag_url ? (
+                    <a
+                      href={match.uitslag_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-sm font-semibold text-brand hover:underline"
+                    >
+                      {match.uitslag}
+                    </a>
+                  ) : (
                     <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-sm font-semibold">
                       {match.uitslag}
                     </span>
-                  )}
-                </span>
-              </button>
+                  ))}
+              </div>
               {expanded === match.id && (
                 <div className="space-y-2 border-t border-gray-100 bg-gray-50 px-4 py-3 text-sm">
                   {match.locatie && <LocatieLink locatie={match.locatie} />}

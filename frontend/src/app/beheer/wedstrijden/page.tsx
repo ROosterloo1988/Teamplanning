@@ -280,11 +280,21 @@ export default function BeheerWedstrijdenPage() {
                   <span>
                     {m.thuisteam} - {m.uitteam}
                   </span>
-                  {m.uitslag && (
-                    <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold">
-                      {m.uitslag}
-                    </span>
-                  )}
+                  {m.uitslag &&
+                    (m.uitslag_url ? (
+                      <a
+                        href={m.uitslag_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-brand hover:underline"
+                      >
+                        {m.uitslag}
+                      </a>
+                    ) : (
+                      <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold">
+                        {m.uitslag}
+                      </span>
+                    ))}
                 </div>
                 {m.locatie && (
                   <div className="mt-0.5">

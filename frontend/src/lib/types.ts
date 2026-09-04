@@ -38,6 +38,7 @@ export interface MatchOut {
   uitteam: string;
   locatie: string | null;
   uitslag: string | null;
+  uitslag_url: string | null;
   status: MatchStatus;
 }
 
@@ -142,6 +143,7 @@ export interface TeambeheerFixturePreview {
   uitteam: string;
   locatie: string | null;
   uitslag: string | null;
+  uitslag_url: string | null;
   status: TeambeheerFixtureStatus;
 }
 
