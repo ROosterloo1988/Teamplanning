@@ -7,7 +7,9 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
 **Fase 1 MVP** (ontwerp sectie 16):
 
 - Spelers loggen in, zien hun eerstvolgende wedstrijd en geven beschikbaarheid
-  door (Ja / Nee / Indien nodig).
+  door (Ja / Nee / Indien nodig). Dat kan ook vooraf voor latere wedstrijden:
+  elke wedstrijd in "Mijn komende wedstrijden" is uitklapbaar met dezelfde
+  keuzeknoppen.
 - Captains zien de beschikbaarheid per wedstrijd, stellen een opstelling samen
   en publiceren die naar de spelers. "Publiceren" verstuurt niets extern (geen
   e-mail): het zet de opstelling zichtbaar voor spelers in de app en maakt een
