@@ -166,16 +166,24 @@ export default function SpelerPage() {
               className="grid w-full grid-cols-[4.5rem_1fr_auto] items-center gap-2 px-4 py-3 text-left text-sm hover:bg-gray-50"
             >
               <span className="whitespace-nowrap text-gray-500">{formatMatchDateShort(match.datum)}</span>
-              <span className="min-w-0 truncate">{match.thuisteam} - {match.uitteam}</span>
+              <span className="min-w-0 truncate">
+                {match.thuisteam} - {match.uitteam}
+                {matchLineup && (
+                  <span className="ml-1.5" title="Opstelling al bekend">
+                    🎯
+                  </span>
+                )}
+              </span>
               <StatusDot status={availability?.status ?? "NO_RESPONSE"} />
             </button>
-            {matchLineup && (
-              <p className="px-4 pb-2 pl-[4.75rem] text-xs text-green-700">
-                🎯 Opgesteld: {matchLineup.player_naam.join(", ")}
-              </p>
-            )}
             {expandedMatchId === match.id && (
               <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
+                {matchLineup && (
+                  <p className="mb-3 text-sm">
+                    <span className="font-medium text-green-800">🎯 Opstelling: </span>
+                    <span className="text-green-700">{matchLineup.player_naam.join(", ")}</span>
+                  </p>
+                )}
                 <AvailabilityButtons
                   status={availability?.status}
                   disabled={busy}
