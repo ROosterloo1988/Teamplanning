@@ -151,12 +151,18 @@ Ga naar **Beheer → Teambeheer**, kies het seizoen en vul in:
 
 De app haalt daarmee `https://feeds.teambeheer.nl/web/jaarprogramma?d=<bond>&s=<seizoen>&div=<poule>`
 op — een HTML-pagina, geen API — en parst per speelweek de tabel met datum,
-thuisteam en uitteam. Alleen wedstrijden waarin het opgegeven teamnummer
-voorkomt (thuis of uit) worden geïmporteerd. Het seizoen (`s=`) wordt
-afgeleid van het gekozen seizoen (`startjaar`-`eindjaar`, bv. 2026 → `26-27`).
-Een datum die nog als `n.n.b.` op de feed staat, wordt overgeslagen tot een
-latere sync er een echte datum voor heeft — dat telt mee als "nog zonder
-datum" in het importresultaat.
+thuisteam, uitteam en (indien al gespeeld) de uitslag. Alleen wedstrijden
+waarin het opgegeven teamnummer voorkomt (thuis of uit) worden
+geïmporteerd. Het seizoen (`s=`) wordt afgeleid van het gekozen seizoen
+(`startjaar`-`eindjaar`, bv. 2026 → `26-27`). Een datum die nog als `n.n.b.`
+op de feed staat, wordt overgeslagen tot een latere sync er een echte datum
+voor heeft — dat telt mee als "nog zonder datum" in het importresultaat.
+
+Zodra een wedstrijd gespeeld is, staat de uitslag (bv. `7-2`) ook gewoon op
+de jaarprogramma-pagina — die wordt bij elke sync meegenomen: de
+wedstrijdstatus gaat automatisch naar "Gespeeld" en de uitslag is te zien in
+**Geschiedenis** en **Beheer → Wedstrijden** (en daar ook handmatig te
+corrigeren, mocht dat nodig zijn).
 
 Daarbij haalt de app ook `/web/teams` (team → speelgelegenheid) en
 `/web/speelgelegenheden` (speelgelegenheid → adres) op om de locatie van

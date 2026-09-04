@@ -21,6 +21,7 @@ interface MatchForm {
   thuisteam: string;
   uitteam: string;
   locatie: string;
+  uitslag: string;
   type: MatchType;
   nummer: string;
   season_id: string;
@@ -31,6 +32,7 @@ const EMPTY_FORM: MatchForm = {
   thuisteam: "",
   uitteam: "",
   locatie: "",
+  uitslag: "",
   type: "COMPETITIE",
   nummer: "",
   season_id: "",
@@ -93,6 +95,7 @@ export default function BeheerWedstrijdenPage() {
         ...form,
         nummer: form.nummer || null,
         locatie: form.locatie || null,
+        uitslag: form.uitslag || null,
         season_id: form.season_id ? Number(form.season_id) : null,
       });
       setForm((f) => ({ ...f, datum: "", thuisteam: "", uitteam: "", locatie: "", nummer: "" }));
@@ -111,6 +114,7 @@ export default function BeheerWedstrijdenPage() {
       thuisteam: match.thuisteam,
       uitteam: match.uitteam,
       locatie: match.locatie ?? "",
+      uitslag: match.uitslag ?? "",
       type: match.type,
       nummer: match.nummer ?? "",
       season_id: match.season_id ? String(match.season_id) : "",
@@ -134,6 +138,7 @@ export default function BeheerWedstrijdenPage() {
         thuisteam: editForm.thuisteam,
         uitteam: editForm.uitteam,
         locatie: editForm.locatie || null,
+        uitslag: editForm.uitslag || null,
         type: editForm.type,
         nummer: editForm.nummer || null,
         season_id: editForm.season_id ? Number(editForm.season_id) : null,
@@ -205,6 +210,12 @@ export default function BeheerWedstrijdenPage() {
                 onChange={(e) => setEditForm({ ...editForm, locatie: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2"
               />
+              <input
+                placeholder="Uitslag (bv. 7-2, optioneel)"
+                value={editForm.uitslag}
+                onChange={(e) => setEditForm({ ...editForm, uitslag: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2"
+              />
               <select
                 value={editForm.type}
                 onChange={(e) => setEditForm({ ...editForm, type: e.target.value as MatchType })}
@@ -265,8 +276,15 @@ export default function BeheerWedstrijdenPage() {
                   <span>·</span>
                   <span>{seasonNaam(m.season_id)}</span>
                 </div>
-                <div className="font-medium">
-                  {m.thuisteam} - {m.uitteam}
+                <div className="flex items-center gap-2 font-medium">
+                  <span>
+                    {m.thuisteam} - {m.uitteam}
+                  </span>
+                  {m.uitslag && (
+                    <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold">
+                      {m.uitslag}
+                    </span>
+                  )}
                 </div>
                 {m.locatie && (
                   <div className="mt-0.5">

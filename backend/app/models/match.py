@@ -20,6 +20,7 @@ class Match(Base):
     thuisteam: Mapped[str] = mapped_column(String(120), nullable=False)
     uitteam: Mapped[str] = mapped_column(String(120), nullable=False)
     locatie: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    uitslag: Mapped[str | None] = mapped_column(String(20), nullable=True)
     status: Mapped[MatchStatus] = mapped_column(Enum(MatchStatus), default=MatchStatus.GEPLAND, nullable=False)
 
     season: Mapped["Season"] = relationship(back_populates="matches")

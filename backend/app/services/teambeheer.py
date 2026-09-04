@@ -294,6 +294,7 @@ def preview_team_fixtures(db: Session, config: TeambeheerConfig, season: Season)
                 "thuisteam": fixture.thuis_naam.strip(),
                 "uitteam": fixture.uit_naam.strip(),
                 "locatie": venue_addresses.get(fixture.thuis_id),
+                "uitslag": fixture.score.strip() or None,
                 "status": status,
             }
         )
@@ -330,12 +331,17 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
         thuisteam = fixture.thuis_naam.strip()
         uitteam = fixture.uit_naam.strip()
         locatie = venue_addresses.get(fixture.thuis_id)
+        uitslag = fixture.score.strip() or None
         external_id = _external_id(config, s_code, fixture)
 
         match = db.query(Match).filter(Match.external_id == external_id).first()
         if match:
-            changed = match.datum != datum or match.thuisteam != thuisteam or match.uitteam != uitteam
-            if changed:
+            schedule_changed = (
+                match.datum != datum or match.thuisteam != thuisteam or match.uitteam != uitteam
+            )
+            uitslag_changed = bool(uitslag) and match.uitslag != uitslag
+
+            if schedule_changed:
                 old_datum = match.datum
                 match.datum = datum
                 match.thuisteam = thuisteam
@@ -347,6 +353,11 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
                     body=f"Was: {old_datum.strftime('%d-%m-%Y')} — nu: {datum.strftime('%d-%m-%Y')}",
                     match_id=match.id,
                 )
+            if uitslag_changed:
+                match.uitslag = uitslag
+                match.status = MatchStatus.GESPEELD
+
+            if schedule_changed or uitslag_changed:
                 updated += 1
             else:
                 unchanged += 1
@@ -365,7 +376,8 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
             thuisteam=thuisteam,
             uitteam=uitteam,
             locatie=locatie,
-            status=MatchStatus.GEPLAND,
+            uitslag=uitslag,
+            status=MatchStatus.GESPEELD if uitslag else MatchStatus.GEPLAND,
         )
         db.add(match)
         db.flush()

@@ -87,8 +87,15 @@ export default function GeschiedenisPage() {
                 className="flex w-full flex-col gap-1 px-4 py-3 text-left hover:bg-gray-50"
               >
                 <span className="text-sm text-gray-500 capitalize">{formatMatchDate(match.datum)}</span>
-                <span className="font-medium">
-                  {match.thuisteam} - {match.uitteam}
+                <span className="flex items-center justify-between gap-2">
+                  <span className="font-medium">
+                    {match.thuisteam} - {match.uitteam}
+                  </span>
+                  {match.uitslag && (
+                    <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-sm font-semibold">
+                      {match.uitslag}
+                    </span>
+                  )}
                 </span>
               </button>
               {expanded === match.id && (
