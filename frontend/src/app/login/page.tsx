@@ -97,11 +97,11 @@ export default function LoginPage() {
     await doEnter(selected.id, selected.rol, unlockPassword);
   }
 
-  // Spelers zijn de grote, prominente knoppen (dat kiest bijna iedereen);
-  // captain/beheerder staan er als kleinere sectie onderaan bij, zodat de
-  // beheerder niet meer even groot tussen de spelers staat.
-  const spelers = (accounts ?? []).filter((a) => a.rol === "SPELER");
-  const overigen = (accounts ?? []).filter((a) => a.rol !== "SPELER");
+  // Spelers (inclusief captains, want die zijn ook gewoon speler) zijn de
+  // grote, prominente knoppen; alleen de beheerder staat als kleinere sectie
+  // onderaan, zodat die niet meer even groot tussen de spelers staat.
+  const spelers = (accounts ?? []).filter((a) => a.rol !== "BEHEER");
+  const overigen = (accounts ?? []).filter((a) => a.rol === "BEHEER");
 
   if (checkingTeamToken) {
     return <div className="py-10 text-center text-gray-400">🎯 Laden...</div>;
@@ -160,7 +160,7 @@ export default function LoginPage() {
 
           {overigen.length > 0 && (
             <>
-              <p className="mb-2 mt-6 text-center text-xs text-gray-400">Captain / beheerder</p>
+              <p className="mb-2 mt-6 text-center text-xs text-gray-400">Beheerder</p>
               <ul className="space-y-1.5">
                 {overigen.map((account) => (
                   <AccountRow
