@@ -183,9 +183,10 @@ officiële wedstrijdformulier, dan is de uitslag in de app ook meteen
 doorklikbaar naar die pagina.
 
 Daarbij haalt de app ook `/web/teams` (team → speelgelegenheid) en
-`/web/speelgelegenheden` (speelgelegenheid → adres) op om de locatie van
-elke wedstrijd automatisch te vullen met het adres van de speelgelegenheid
-van de thuisspelende ploeg — meteen bruikbaar als Google Maps-link (zie
+`/web/speelgelegenheden` (speelgelegenheid → naam + adres) op om de locatie
+van elke wedstrijd automatisch te vullen met naam én adres van de
+speelgelegenheid van de thuisspelende ploeg (bv. "Café de Gouverneur,
+Munstersestraat 2, Raalte") — meteen bruikbaar als Google Maps-link (zie
 hierboven). Dat gebeurt alleen voor wedstrijden die nog geen locatie hebben:
 een locatie die je zelf via **Beheer → Wedstrijden** hebt aangepast, wordt
 nooit overschreven. Lukt het ophalen van die twee feeds een keer niet, dan

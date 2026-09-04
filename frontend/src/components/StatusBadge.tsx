@@ -30,7 +30,7 @@ export function formatMatchDate(datum: string): string {
 
 export function formatMatchDateShort(datum: string): string {
   const date = new Date(datum + "T00:00:00");
-  return date.toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+  return date.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" });
 }
 
 export function mapsUrl(locatie: string): string {

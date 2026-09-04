@@ -67,6 +67,13 @@ class Venue:
         parts = [p.strip() for p in (self.adres, self.plaats) if p and p.strip()]
         return ", ".join(parts)
 
+    @property
+    def label(self) -> str:
+        """Naam + adres, bv. 'Café de Gouverneur, Munstersestraat 2, Raalte' —
+        zo weet je meteen welke zaak het is, niet alleen het kale adres."""
+        parts = [p.strip() for p in (self.naam, self.volledig_adres) if p and p.strip()]
+        return ", ".join(parts)
+
 
 def season_code(startjaar: int) -> str:
     """2026 -> '26-27', zoals gebruikt in de s=-queryparameter."""
@@ -253,11 +260,12 @@ def parse_teams(html: str) -> dict[int, int]:
 
 
 def team_venue_addresses(bond_id: int, s_code: str) -> dict[int, str]:
-    """Koppelt elk team-id aan het volledige adres van zijn speelgelegenheid,
-    via /web/teams (team -> cn) en /web/speelgelegenheden (cn -> adres). Geeft
-    een lege dict terug (in plaats van te crashen) als een van beide feeds
-    niet opgehaald kan worden — locatie is een handig extraatje, geen
-    voorwaarde om wedstrijden te kunnen synchroniseren."""
+    """Koppelt elk team-id aan naam + adres van zijn speelgelegenheid (bv.
+    'Café de Gouverneur, Munstersestraat 2, Raalte'), via /web/teams
+    (team -> cn) en /web/speelgelegenheden (cn -> naam + adres). Geeft een
+    lege dict terug (in plaats van te crashen) als een van beide feeds niet
+    opgehaald kan worden — locatie is een handig extraatje, geen voorwaarde
+    om wedstrijden te kunnen synchroniseren."""
     try:
         teams_html = fetch_teams(bond_id, s_code)
         venues_html = fetch_speelgelegenheden(bond_id, s_code)
@@ -267,9 +275,9 @@ def team_venue_addresses(bond_id: int, s_code: str) -> dict[int, str]:
     team_venue = parse_teams(teams_html)
     venues = parse_speelgelegenheden(venues_html)
     return {
-        team_id: venues[cn].volledig_adres
+        team_id: venues[cn].label
         for team_id, cn in team_venue.items()
-        if cn in venues and venues[cn].volledig_adres
+        if cn in venues and venues[cn].label
     }
 
 
