@@ -136,9 +136,7 @@ export default function SpelerPage() {
           {lineup && (
             <div className="mt-4 rounded-lg bg-green-50 p-3 text-sm">
               <p className="mb-1 font-medium text-green-800">🎯 Opstelling bekend</p>
-              <p className="text-green-700">
-                {lineup.player_ids.length} speler{lineup.player_ids.length === 1 ? "" : "s"} opgesteld
-              </p>
+              <p className="text-green-700">{lineup.player_naam.join(", ")}</p>
             </div>
           )}
 
