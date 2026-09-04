@@ -6,7 +6,13 @@ import { useAuth } from "@/lib/auth";
 import { api, ApiError } from "@/lib/api";
 import { AvailabilityOut, AvailabilityStatus, LineupOut, MatchOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
-import { daysUntil, formatMatchDate, formatMatchDateShort, StatusBadge } from "@/components/StatusBadge";
+import {
+  daysUntil,
+  formatMatchDate,
+  formatMatchDateShort,
+  LocatieLink,
+  StatusBadge,
+} from "@/components/StatusBadge";
 
 // Zie functioneel ontwerp v1 sectie 11: herinnering vanaf N dagen voor de wedstrijd.
 const REMINDER_DAYS_BEFORE = 3;
@@ -120,7 +126,11 @@ export default function SpelerPage() {
           <p className="text-xl font-bold">{next.match.thuisteam}</p>
           <p className="text-gray-400">tegen</p>
           <p className="text-xl font-bold">{next.match.uitteam}</p>
-          {next.match.locatie && <p className="mt-2 text-gray-500">📍 {next.match.locatie}</p>}
+          {next.match.locatie && (
+            <p className="mt-2">
+              <LocatieLink locatie={next.match.locatie} />
+            </p>
+          )}
 
           {lineup && (
             <div className="mt-4 rounded-lg bg-green-50 p-3 text-sm">

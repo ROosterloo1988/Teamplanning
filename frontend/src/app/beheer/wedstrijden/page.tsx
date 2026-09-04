@@ -7,7 +7,7 @@ import { api, ApiError } from "@/lib/api";
 import { MatchOut, MatchType, SeasonOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
 import { BeheerNav } from "@/components/BeheerNav";
-import { formatMatchDate } from "@/components/StatusBadge";
+import { formatMatchDate, LocatieLink } from "@/components/StatusBadge";
 
 const TYPE_LABELS: Record<MatchType, string> = {
   COMPETITIE: "Competitie",
@@ -16,23 +16,40 @@ const TYPE_LABELS: Record<MatchType, string> = {
   OVERIG: "Overig",
 };
 
+interface MatchForm {
+  datum: string;
+  thuisteam: string;
+  uitteam: string;
+  locatie: string;
+  type: MatchType;
+  nummer: string;
+  season_id: string;
+}
+
+const EMPTY_FORM: MatchForm = {
+  datum: "",
+  thuisteam: "",
+  uitteam: "",
+  locatie: "",
+  type: "COMPETITIE",
+  nummer: "",
+  season_id: "",
+};
+
 export default function BeheerWedstrijdenPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [matches, setMatches] = useState<MatchOut[]>([]);
   const [seasons, setSeasons] = useState<SeasonOut[]>([]);
   const [seasonFilter, setSeasonFilter] = useState<string>("");
-  const [form, setForm] = useState({
-    datum: "",
-    thuisteam: "",
-    uitteam: "",
-    locatie: "",
-    type: "COMPETITIE" as MatchType,
-    nummer: "",
-    season_id: "",
-  });
+  const [form, setForm] = useState<MatchForm>(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<MatchForm>(EMPTY_FORM);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   const loadMatches = useCallback(async (seasonId: string) => {
     const query = seasonId ? `?season_id=${seasonId}` : "";
@@ -87,6 +104,49 @@ export default function BeheerWedstrijdenPage() {
     }
   }
 
+  function startEdit(match: MatchOut) {
+    setEditingId(match.id);
+    setEditForm({
+      datum: match.datum,
+      thuisteam: match.thuisteam,
+      uitteam: match.uitteam,
+      locatie: match.locatie ?? "",
+      type: match.type,
+      nummer: match.nummer ?? "",
+      season_id: match.season_id ? String(match.season_id) : "",
+    });
+    setEditError(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditError(null);
+  }
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (editingId === null) return;
+    setEditError(null);
+    setEditSubmitting(true);
+    try {
+      await api.put(`/matches/${editingId}`, {
+        datum: editForm.datum,
+        thuisteam: editForm.thuisteam,
+        uitteam: editForm.uitteam,
+        locatie: editForm.locatie || null,
+        type: editForm.type,
+        nummer: editForm.nummer || null,
+        season_id: editForm.season_id ? Number(editForm.season_id) : null,
+      });
+      setEditingId(null);
+      await loadMatches(seasonFilter);
+    } catch (err) {
+      setEditError(err instanceof ApiError ? err.message : "Opslaan mislukt");
+    } finally {
+      setEditSubmitting(false);
+    }
+  }
+
   if (loading) return <div className="py-10 text-center text-gray-400">Laden...</div>;
 
   return (
@@ -109,37 +169,121 @@ export default function BeheerWedstrijdenPage() {
         </select>
       </div>
 
-      <table className="mb-8 w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-sm">
-        <thead className="bg-gray-50 text-left text-gray-500">
-          <tr>
-            <th className="px-3 py-2 font-medium">Datum</th>
-            <th className="px-3 py-2 font-medium">Thuis</th>
-            <th className="px-3 py-2 font-medium">Uit</th>
-            <th className="px-3 py-2 font-medium">Locatie</th>
-            <th className="px-3 py-2 font-medium">Type</th>
-            <th className="px-3 py-2 font-medium">Seizoen</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {matches.map((m) => (
-            <tr key={m.id}>
-              <td className="px-3 py-2 capitalize">{formatMatchDate(m.datum)}</td>
-              <td className="px-3 py-2">{m.thuisteam}</td>
-              <td className="px-3 py-2">{m.uitteam}</td>
-              <td className="px-3 py-2">{m.locatie ?? "—"}</td>
-              <td className="px-3 py-2">{TYPE_LABELS[m.type]}</td>
-              <td className="px-3 py-2">{seasonNaam(m.season_id)}</td>
-            </tr>
-          ))}
-          {matches.length === 0 && (
-            <tr>
-              <td colSpan={6} className="px-3 py-6 text-center text-gray-400">
-                Geen wedstrijden
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <div className="mb-8 divide-y divide-gray-200 rounded-xl border border-gray-200 bg-white text-sm">
+        {matches.length === 0 && <p className="px-3 py-6 text-center text-gray-400">Geen wedstrijden</p>}
+        {matches.map((m) =>
+          editingId === m.id ? (
+            <form
+              key={m.id}
+              onSubmit={handleEditSubmit}
+              className="space-y-3 px-4 py-4"
+            >
+              <input
+                type="date"
+                required
+                value={editForm.datum}
+                onChange={(e) => setEditForm({ ...editForm, datum: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2"
+              />
+              <input
+                placeholder="Thuisteam"
+                required
+                value={editForm.thuisteam}
+                onChange={(e) => setEditForm({ ...editForm, thuisteam: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2"
+              />
+              <input
+                placeholder="Uitteam"
+                required
+                value={editForm.uitteam}
+                onChange={(e) => setEditForm({ ...editForm, uitteam: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2"
+              />
+              <input
+                placeholder="Locatie (adres, zodat Google Maps ermee kan navigeren)"
+                value={editForm.locatie}
+                onChange={(e) => setEditForm({ ...editForm, locatie: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2"
+              />
+              <select
+                value={editForm.type}
+                onChange={(e) => setEditForm({ ...editForm, type: e.target.value as MatchType })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2"
+              >
+                {Object.entries(TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={editForm.season_id}
+                onChange={(e) => setEditForm({ ...editForm, season_id: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2"
+              >
+                <option value="">Geen seizoen</option>
+                {seasons.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.naam}
+                    {s.actief ? " (actief)" : ""}
+                  </option>
+                ))}
+              </select>
+              <input
+                placeholder="Wedstrijdnummer (optioneel)"
+                value={editForm.nummer}
+                onChange={(e) => setEditForm({ ...editForm, nummer: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2"
+              />
+
+              {editError && <p className="text-sm text-red-600">{editError}</p>}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="flex-1 rounded-lg border border-gray-300 py-2 font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Annuleren
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="flex-1 rounded-lg bg-brand py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+                >
+                  {editSubmitting ? "Bezig..." : "Opslaan"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div key={m.id} className="flex items-center justify-between gap-3 px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-2 text-gray-500">
+                  <span className="capitalize">{formatMatchDate(m.datum)}</span>
+                  <span>·</span>
+                  <span>{TYPE_LABELS[m.type]}</span>
+                  <span>·</span>
+                  <span>{seasonNaam(m.season_id)}</span>
+                </div>
+                <div className="font-medium">
+                  {m.thuisteam} - {m.uitteam}
+                </div>
+                {m.locatie && (
+                  <div className="mt-0.5">
+                    <LocatieLink locatie={m.locatie} />
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => startEdit(m)}
+                className="shrink-0 text-xs font-medium text-brand hover:underline"
+              >
+                Bewerken
+              </button>
+            </div>
+          )
+        )}
+      </div>
 
       <h2 className="mb-3 font-medium">Wedstrijd toevoegen</h2>
       <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-gray-200 bg-white p-4">
@@ -165,7 +309,7 @@ export default function BeheerWedstrijdenPage() {
           className="w-full rounded-lg border border-gray-300 px-3 py-2"
         />
         <input
-          placeholder="Locatie"
+          placeholder="Locatie (adres, zodat Google Maps ermee kan navigeren)"
           value={form.locatie}
           onChange={(e) => setForm({ ...form, locatie: e.target.value })}
           className="w-full rounded-lg border border-gray-300 px-3 py-2"

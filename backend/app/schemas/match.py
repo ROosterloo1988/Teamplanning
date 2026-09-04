@@ -21,6 +21,18 @@ class MatchCreate(MatchBase):
     external_id: str | None = None
 
 
+class MatchUpdate(BaseModel):
+    season_id: int | None = None
+    type: MatchType | None = None
+    nummer: str | None = None
+    datum: date | None = None
+    tijd: time | None = None
+    thuisteam: str | None = None
+    uitteam: str | None = None
+    locatie: str | None = None
+    status: MatchStatus | None = None
+
+
 class MatchOut(MatchBase):
     model_config = ConfigDict(from_attributes=True)
 

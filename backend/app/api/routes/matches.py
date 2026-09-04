@@ -12,7 +12,7 @@ from app.models.match import Match
 from app.models.player import Player
 from app.models.season import Season
 from app.models.enums import AvailabilityStatus
-from app.schemas.match import MatchCreate, MatchOut
+from app.schemas.match import MatchCreate, MatchOut, MatchUpdate
 from app.schemas.reminder import MatchReminderOut
 from app.services.notifications import notify_all_players
 
@@ -68,6 +68,20 @@ def get_match(match_id: int, db: Session = Depends(get_db), _=Depends(get_curren
     match = db.get(Match, match_id)
     if not match:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wedstrijd niet gevonden")
+    return match
+
+
+@router.put("/{match_id}", response_model=MatchOut, dependencies=[Depends(require_beheer)])
+def update_match(match_id: int, payload: MatchUpdate, db: Session = Depends(get_db)):
+    match = db.get(Match, match_id)
+    if not match:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wedstrijd niet gevonden")
+
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(match, field, value)
+
+    db.commit()
+    db.refresh(match)
     return match
 
 
