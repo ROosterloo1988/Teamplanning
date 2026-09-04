@@ -96,7 +96,7 @@ export default function SpelerPage() {
   }
 
   const next = rows[0];
-  const upcoming = rows.slice(0, 8);
+  const upcoming = rows;
   const showReminder =
     !!next &&
     (next.availability?.status ?? "NO_RESPONSE") === "NO_RESPONSE" &&
