@@ -79,6 +79,11 @@ def set_lineup(
             old_value=old_names or None,
             new_value=new_names or None,
         )
+        # Een wijziging aan een al gepubliceerde opstelling (aanpassen of
+        # helemaal leeghalen) maakt 'm weer een concept: spelers zien 'm pas
+        # weer zodra de captain expliciet (opnieuw) publiceert.
+        lineup.published = False
+        lineup.published_at = None
 
     db.commit()
     db.refresh(lineup)
