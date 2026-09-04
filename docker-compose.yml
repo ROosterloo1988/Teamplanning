@@ -38,13 +38,15 @@ services:
     build:
       context: ./frontend
       args:
+        # Next.js lost rewrites() (zie frontend/next.config.mjs) op tijdens
+        # `next build`, niet opnieuw bij het opstarten van de server. Deze
+        # env vars moeten dus als build-arg mee, een `environment:`-waarde
+        # hieronder zou genegeerd worden.
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
+        BACKEND_INTERNAL_URL: http://backend:8000
     restart: unless-stopped
     depends_on:
       - backend
-    environment:
-      # Server-side proxy-doel voor /api, zie frontend/next.config.mjs.
-      BACKEND_INTERNAL_URL: http://backend:8000
     ports:
       - "3000:3000"
 

@@ -9,8 +9,14 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Relatief pad: de browser praat alleen met dit eigen origin, Next.js
 # proxyt /api server-side naar BACKEND_INTERNAL_URL (zie next.config.mjs).
+# Beide moeten er al zijn vóór `next build`: Next.js lost rewrites() op
+# tijdens de build (het resultaat wordt vastgelegd in
+# .next/routes-manifest.json) en niet opnieuw bij het opstarten van de
+# server — een runtime-only env var hier zou dus genegeerd worden.
 ARG NEXT_PUBLIC_API_URL=/api
+ARG BACKEND_INTERNAL_URL=http://backend:8000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
 RUN npm run build
 
 FROM node:20-alpine AS runner
