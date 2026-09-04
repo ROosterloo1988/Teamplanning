@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { DashboardStats } from "@/lib/types";
 import { Nav } from "@/components/Nav";
 import { BeheerNav } from "@/components/BeheerNav";
@@ -12,6 +12,8 @@ export default function BeheerDashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [fetching, setFetching] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -23,10 +25,14 @@ export default function BeheerDashboardPage() {
       router.replace("/speler");
       return;
     }
-    api.get<DashboardStats>("/admin/dashboard").then(setStats);
+    api
+      .get<DashboardStats>("/admin/dashboard")
+      .then(setStats)
+      .catch((err) => setError(err instanceof ApiError ? err.message : "Laden mislukt"))
+      .finally(() => setFetching(false));
   }, [user, loading, router]);
 
-  if (loading || !stats) {
+  if (loading || fetching) {
     return <div className="py-10 text-center text-gray-400">Laden...</div>;
   }
 
@@ -35,12 +41,15 @@ export default function BeheerDashboardPage() {
       <Nav />
       <BeheerNav />
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
-      <div className="grid grid-cols-2 gap-4">
-        <StatCard label="👥 Spelers" value={stats.spelers} />
-        <StatCard label="🎯 Wedstrijden" value={stats.wedstrijden} />
-        <StatCard label="🟢 Compleet ingevuld" value={stats.wedstrijden_compleet} />
-        <StatCard label="⚠️ Missen antwoorden" value={stats.wedstrijden_missen_antwoorden} />
-      </div>
+      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+      {stats && (
+        <div className="grid grid-cols-2 gap-4">
+          <StatCard label="👥 Spelers" value={stats.spelers} />
+          <StatCard label="🎯 Wedstrijden" value={stats.wedstrijden} />
+          <StatCard label="🟢 Compleet ingevuld" value={stats.wedstrijden_compleet} />
+          <StatCard label="⚠️ Missen antwoorden" value={stats.wedstrijden_missen_antwoorden} />
+        </div>
+      )}
     </div>
   );
 }

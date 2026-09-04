@@ -12,6 +12,10 @@ export default function HomePage() {
     if (loading) return;
     if (!user) {
       router.replace("/login");
+    } else if (user.rol === "BEHEER") {
+      router.replace("/beheer");
+    } else if (user.rol === "CAPTAIN") {
+      router.replace("/captain");
     } else {
       router.replace("/speler");
     }
