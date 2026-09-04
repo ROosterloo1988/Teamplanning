@@ -37,6 +37,7 @@ export interface MatchOut {
   thuisteam: string;
   uitteam: string;
   locatie: string | null;
+  uitslag: string | null;
   status: MatchStatus;
 }
 
@@ -140,6 +141,7 @@ export interface TeambeheerFixturePreview {
   thuisteam: string;
   uitteam: string;
   locatie: string | null;
+  uitslag: string | null;
   status: TeambeheerFixtureStatus;
 }
 

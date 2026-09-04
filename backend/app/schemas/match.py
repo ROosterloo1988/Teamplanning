@@ -14,6 +14,7 @@ class MatchBase(BaseModel):
     thuisteam: str
     uitteam: str
     locatie: str | None = None
+    uitslag: str | None = None
     status: MatchStatus = MatchStatus.GEPLAND
 
 
@@ -30,6 +31,7 @@ class MatchUpdate(BaseModel):
     thuisteam: str | None = None
     uitteam: str | None = None
     locatie: str | None = None
+    uitslag: str | None = None
     status: MatchStatus | None = None
 
 
