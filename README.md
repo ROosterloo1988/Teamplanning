@@ -58,6 +58,10 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
   ongeluk fout ingevuld worden.
 - **Wedstrijdhistorie**: **Geschiedenis** (voor alle rollen) toont afgelopen
   wedstrijden met de gepubliceerde opstelling, filterbaar per seizoen.
+- **Overzicht** (voor alle rollen): een alleen-lezen matrix van wedstrijd ×
+  speler met per cel een kleurenbolletje (🟢/🔴/🟡/⚪), zodat spelers
+  onderling kunnen zien wie wel of niet kan — handig om een ruil te
+  regelen. Filterbaar per seizoen en standaard alleen komende wedstrijden.
 - **In-app notificatiecentrum**: een bel-icoon met ongelezen-badge in de
   navigatie en een **Meldingen**-pagina. Spelers met een account krijgen een
   melding bij een nieuwe wedstrijd en bij een gepubliceerde opstelling.
@@ -189,8 +193,13 @@ speelgelegenheid van de thuisspelende ploeg (bv. "Café de Gouverneur,
 Munstersestraat 2, Raalte") — meteen bruikbaar als Google Maps-link (zie
 hierboven). Dat gebeurt alleen voor wedstrijden die nog geen locatie hebben:
 een locatie die je zelf via **Beheer → Wedstrijden** hebt aangepast, wordt
-nooit overschreven. Lukt het ophalen van die twee feeds een keer niet, dan
-gaat de sync van de wedstrijden gewoon door, alleen zonder locatie erbij.
+nooit overschreven. Stond een locatie er nog in het oudere kale-adresformaat
+in (zonder cafénaam, van vóór deze koppeling de naam ook meenam), dan wordt
+die bij de eerstvolgende sync automatisch bijgewerkt met de naam erbij —
+alleen als de locatie exact het automatisch ingevulde adres is, dus een
+echte handmatige aanpassing blijft ook dan met rust. Lukt het ophalen van
+die twee feeds een keer niet, dan gaat de sync van de wedstrijden gewoon
+door, alleen zonder locatie erbij.
 
 `Beheer → Teambeheer` laat je eerst preview'en (nieuw/bestaand/nog geen
 datum) voordat je importeert. Daarnaast draait er een ingebouwde nachtelijke

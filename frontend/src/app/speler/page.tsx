@@ -11,7 +11,7 @@ import {
   formatMatchDate,
   formatMatchDateShort,
   LocatieLink,
-  StatusBadge,
+  StatusDot,
 } from "@/components/StatusBadge";
 
 // Zie functioneel ontwerp v1 sectie 11: herinnering vanaf N dagen voor de wedstrijd.
@@ -163,10 +163,10 @@ export default function SpelerPage() {
           <li key={match.id}>
             <button
               onClick={() => setExpandedMatchId((id) => (id === match.id ? null : match.id))}
-              className="grid w-full grid-cols-[4.5rem_1fr_auto] items-start gap-2 px-4 py-3 text-left text-sm hover:bg-gray-50"
+              className="grid w-full grid-cols-[4.5rem_1fr_auto] items-center gap-2 px-4 py-3 text-left text-sm hover:bg-gray-50"
             >
-              <span className="whitespace-nowrap pt-0.5 text-gray-500">{formatMatchDateShort(match.datum)}</span>
-              <span className="min-w-0">
+              <span className="whitespace-nowrap text-gray-500">{formatMatchDateShort(match.datum)}</span>
+              <span className="min-w-0 truncate">
                 {match.thuisteam} - {match.uitteam}
                 {matchLineup && (
                   <span className="ml-1.5" title="Opstelling al bekend">
@@ -174,9 +174,7 @@ export default function SpelerPage() {
                   </span>
                 )}
               </span>
-              <span className="pt-0.5">
-                <StatusBadge status={availability?.status ?? "NO_RESPONSE"} />
-              </span>
+              <StatusDot status={availability?.status ?? "NO_RESPONSE"} />
             </button>
             {expandedMatchId === match.id && (
               <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">

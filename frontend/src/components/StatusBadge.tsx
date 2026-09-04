@@ -7,8 +7,21 @@ const LABELS: Record<AvailabilityStatus, string> = {
   NO_RESPONSE: "⚪ Geen antwoord",
 };
 
+const DOTS: Record<AvailabilityStatus, string> = {
+  AVAILABLE: "🟢",
+  UNAVAILABLE: "🔴",
+  IF_NEEDED: "🟡",
+  NO_RESPONSE: "⚪",
+};
+
 export function StatusBadge({ status }: { status: AvailabilityStatus }) {
   return <span>{LABELS[status]}</span>;
+}
+
+// Alleen het kleurenbolletje, geen tekst — voor compacte lijsten waar de
+// volledige status-tekst niet op één regel past.
+export function StatusDot({ status }: { status: AvailabilityStatus }) {
+  return <span title={LABELS[status]}>{DOTS[status]}</span>;
 }
 
 export function statusLabel(value: string | null): string {

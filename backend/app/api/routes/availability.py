@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
@@ -71,6 +73,35 @@ def match_availability(match_id: int, db: Session = Depends(get_db)):
         .filter(Availability.match_id == match_id)
         .all()
     )
+    return [
+        AvailabilityWithPlayer(
+            id=row.id,
+            match_id=row.match_id,
+            player_id=row.player_id,
+            status=row.status,
+            updated_at=row.updated_at,
+            player_naam=row.player.naam,
+        )
+        for row in rows
+    ]
+
+
+@router.get("/overview", response_model=list[AvailabilityWithPlayer])
+def availability_overview(
+    season_id: int | None = None,
+    upcoming_only: bool = False,
+    db: Session = Depends(get_db),
+    _=Depends(get_current_user),
+):
+    """Alle beschikbaarheid in één keer, voor het alleen-lezen ruil-overzicht
+    (wedstrijd x speler) — bewust geen require_captain: spelers moeten dit
+    onderling kunnen inzien om te kunnen ruilen."""
+    query = db.query(Availability).options(joinedload(Availability.player)).join(Match)
+    if season_id is not None:
+        query = query.filter(Match.season_id == season_id)
+    if upcoming_only:
+        query = query.filter(Match.datum >= date.today())
+    rows = query.all()
     return [
         AvailabilityWithPlayer(
             id=row.id,

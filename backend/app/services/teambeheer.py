@@ -259,13 +259,13 @@ def parse_teams(html: str) -> dict[int, int]:
     return team_venue
 
 
-def team_venue_addresses(bond_id: int, s_code: str) -> dict[int, str]:
-    """Koppelt elk team-id aan naam + adres van zijn speelgelegenheid (bv.
-    'Café de Gouverneur, Munstersestraat 2, Raalte'), via /web/teams
-    (team -> cn) en /web/speelgelegenheden (cn -> naam + adres). Geeft een
-    lege dict terug (in plaats van te crashen) als een van beide feeds niet
-    opgehaald kan worden — locatie is een handig extraatje, geen voorwaarde
-    om wedstrijden te kunnen synchroniseren."""
+def team_venues(bond_id: int, s_code: str) -> dict[int, Venue]:
+    """Koppelt elk team-id aan zijn Venue (naam + adres van de
+    speelgelegenheid), via /web/teams (team -> cn) en
+    /web/speelgelegenheden (cn -> Venue). Geeft een lege dict terug (in
+    plaats van te crashen) als een van beide feeds niet opgehaald kan
+    worden — locatie is een handig extraatje, geen voorwaarde om
+    wedstrijden te kunnen synchroniseren."""
     try:
         teams_html = fetch_teams(bond_id, s_code)
         venues_html = fetch_speelgelegenheden(bond_id, s_code)
@@ -274,11 +274,13 @@ def team_venue_addresses(bond_id: int, s_code: str) -> dict[int, str]:
 
     team_venue = parse_teams(teams_html)
     venues = parse_speelgelegenheden(venues_html)
-    return {
-        team_id: venues[cn].label
-        for team_id, cn in team_venue.items()
-        if cn in venues and venues[cn].label
-    }
+    return {team_id: venues[cn] for team_id, cn in team_venue.items() if cn in venues}
+
+
+def team_venue_addresses(bond_id: int, s_code: str) -> dict[int, str]:
+    """Zoals team_venues, maar geeft meteen het label (naam + adres) terug,
+    bv. 'Café de Gouverneur, Munstersestraat 2, Raalte'."""
+    return {team_id: venue.label for team_id, venue in team_venues(bond_id, s_code).items() if venue.label}
 
 
 def _our_fixtures(fixtures: list[TeambeheerFixture], team_id: int) -> list[TeambeheerFixture]:
@@ -331,7 +333,7 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
     s_code = season_code(season.startjaar)
     html = fetch_jaarprogramma(config.bond_id, s_code, config.poule)
     fixtures = _our_fixtures(parse_jaarprogramma(html), config.team_id)
-    venue_addresses = team_venue_addresses(config.bond_id, s_code)
+    venues = team_venues(config.bond_id, s_code)
 
     created = updated = unchanged = skipped_no_date = 0
     resolved_team_naam: str | None = None
@@ -351,7 +353,8 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
 
         thuisteam = fixture.thuis_naam.strip()
         uitteam = fixture.uit_naam.strip()
-        locatie = venue_addresses.get(fixture.thuis_id)
+        venue = venues.get(fixture.thuis_id)
+        locatie = venue.label if venue and venue.label else None
         uitslag = fixture.score.strip() or None
         uitslag_url = fixture.score_url
         external_id = _external_id(config, s_code, fixture)
@@ -387,9 +390,21 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
             else:
                 unchanged += 1
             # Alleen aanvullen als er nog geen locatie staat — een handmatige
-            # correctie via Beheer > Wedstrijden wordt nooit overschreven.
+            # correctie via Beheer > Wedstrijden wordt nooit overschreven. De
+            # ene uitzondering: staat de locatie er nog exact zoals een
+            # oudere versie van deze sync 'm zelf zonder cafénaam invulde
+            # (alleen straat + plaats), dan is dat geen handmatige edit en
+            # mag 'm alsnog geüpgraded worden zodra de naam bekend is.
             if not match.locatie and locatie:
                 match.locatie = locatie
+            elif (
+                match.locatie
+                and venue
+                and venue.label
+                and match.locatie == venue.volledig_adres
+                and venue.label != venue.volledig_adres
+            ):
+                match.locatie = venue.label
             continue
 
         match = Match(
