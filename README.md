@@ -158,6 +158,15 @@ Een datum die nog als `n.n.b.` op de feed staat, wordt overgeslagen tot een
 latere sync er een echte datum voor heeft — dat telt mee als "nog zonder
 datum" in het importresultaat.
 
+Daarbij haalt de app ook `/web/teams` (team → speelgelegenheid) en
+`/web/speelgelegenheden` (speelgelegenheid → adres) op om de locatie van
+elke wedstrijd automatisch te vullen met het adres van de speelgelegenheid
+van de thuisspelende ploeg — meteen bruikbaar als Google Maps-link (zie
+hierboven). Dat gebeurt alleen voor wedstrijden die nog geen locatie hebben:
+een locatie die je zelf via **Beheer → Wedstrijden** hebt aangepast, wordt
+nooit overschreven. Lukt het ophalen van die twee feeds een keer niet, dan
+gaat de sync van de wedstrijden gewoon door, alleen zonder locatie erbij.
+
 `Beheer → Teambeheer` laat je eerst preview'en (nieuw/bestaand/nog geen
 datum) voordat je importeert. Daarnaast draait er een ingebouwde nachtelijke
 achtergrondtaak (standaard 03:30 UTC, `TEAMBEHEER_SYNC_HOUR` /

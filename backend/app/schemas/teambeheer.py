@@ -26,6 +26,7 @@ class TeambeheerFixturePreview(BaseModel):
     datum_raw: str
     thuisteam: str
     uitteam: str
+    locatie: str | None = None
     status: str  # "nieuw" | "bestaand" | "geen_datum"
 
 

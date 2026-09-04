@@ -1,10 +1,18 @@
 from datetime import date
 from pathlib import Path
 
-from app.services.teambeheer import parse_jaarprogramma, resolve_year, season_code
+from app.services.teambeheer import (
+    parse_jaarprogramma,
+    parse_speelgelegenheden,
+    parse_teams,
+    resolve_year,
+    season_code,
+)
 
 FIXTURE = Path(__file__).parent / "fixtures" / "teambeheer_jaarprogramma_1a.html"
 FULL_SEASON_FIXTURE = Path(__file__).parent / "fixtures" / "teambeheer_jaarprogramma_1a_full_season.html"
+SPEELGELEGENHEDEN_FIXTURE = Path(__file__).parent / "fixtures" / "teambeheer_speelgelegenheden.html"
+TEAMS_FIXTURE = Path(__file__).parent / "fixtures" / "teambeheer_teams.html"
 
 
 def _fixtures():
@@ -95,3 +103,47 @@ def test_de_gouv_jan_to_may_dates_resolve_into_next_calendar_year():
     # De reeks moet chronologisch oplopen (geen datum "voor" de vorige speelweek).
     ordered = [resolved[week] for week in sorted(resolved)]
     assert ordered == sorted(ordered)
+
+
+def test_parse_speelgelegenheden():
+    venues = parse_speelgelegenheden(SPEELGELEGENHEDEN_FIXTURE.read_text())
+    assert len(venues) == 15
+
+    gouverneur = venues[19]
+    assert gouverneur.naam == "Café de Gouverneur"
+    assert gouverneur.adres == "Munstersestraat 2"
+    assert gouverneur.plaats == "Raalte"
+    assert gouverneur.volledig_adres == "Munstersestraat 2, Raalte"
+
+
+def test_parse_teams():
+    team_venue = parse_teams(TEAMS_FIXTURE.read_text())
+    assert len(team_venue) == 14
+    assert team_venue[3852] == 19  # DE GOUV -> Café de Gouverneur
+
+
+def test_team_venue_addresses_combines_both_feeds(monkeypatch):
+    from app.services import teambeheer as teambeheer_module
+
+    monkeypatch.setattr(
+        teambeheer_module, "fetch_teams", lambda bond_id, s_code: TEAMS_FIXTURE.read_text()
+    )
+    monkeypatch.setattr(
+        teambeheer_module,
+        "fetch_speelgelegenheden",
+        lambda bond_id, s_code: SPEELGELEGENHEDEN_FIXTURE.read_text(),
+    )
+
+    addresses = teambeheer_module.team_venue_addresses(11, "26-27")
+    assert addresses[3852] == "Munstersestraat 2, Raalte"  # DE GOUV
+    assert addresses[3854] == "Langstraat 44, Wijhe"  # Het Praothuus 2
+
+
+def test_team_venue_addresses_degrades_gracefully_on_fetch_error(monkeypatch):
+    from app.services import teambeheer as teambeheer_module
+
+    def _raise(bond_id, s_code):
+        raise teambeheer_module.TeambeheerFetchError("kapot")
+
+    monkeypatch.setattr(teambeheer_module, "fetch_teams", _raise)
+    assert teambeheer_module.team_venue_addresses(11, "26-27") == {}
