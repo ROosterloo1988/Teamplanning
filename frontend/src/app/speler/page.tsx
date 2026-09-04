@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { AvailabilityOut, AvailabilityStatus, LineupOut, MatchOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
 import { daysUntil, formatMatchDate, formatMatchDateShort, StatusBadge } from "@/components/StatusBadge";
@@ -23,28 +23,35 @@ export default function SpelerPage() {
   const [lineup, setLineup] = useState<LineupOut | null>(null);
   const [busy, setBusy] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setFetching(true);
-    const [matches, availabilities] = await Promise.all([
-      api.get<MatchOut[]>("/matches?upcoming_only=true"),
-      api.get<AvailabilityOut[]>("/availability/me"),
-    ]);
-    const byMatch = new Map(availabilities.map((a) => [a.match_id, a]));
-    const combined = matches
-      .map((match) => ({ match, availability: byMatch.get(match.id) ?? null }))
-      .sort((a, b) => a.match.datum.localeCompare(b.match.datum));
-    setRows(combined);
+    setError(null);
+    try {
+      const [matches, availabilities] = await Promise.all([
+        api.get<MatchOut[]>("/matches?upcoming_only=true"),
+        api.get<AvailabilityOut[]>("/availability/me"),
+      ]);
+      const byMatch = new Map(availabilities.map((a) => [a.match_id, a]));
+      const combined = matches
+        .map((match) => ({ match, availability: byMatch.get(match.id) ?? null }))
+        .sort((a, b) => a.match.datum.localeCompare(b.match.datum));
+      setRows(combined);
 
-    if (combined.length > 0) {
-      try {
-        const nextLineup = await api.get<LineupOut>(`/lineups/match/${combined[0].match.id}`);
-        setLineup(nextLineup.published ? nextLineup : null);
-      } catch {
-        setLineup(null);
+      if (combined.length > 0) {
+        try {
+          const nextLineup = await api.get<LineupOut>(`/lineups/match/${combined[0].match.id}`);
+          setLineup(nextLineup.published ? nextLineup : null);
+        } catch {
+          setLineup(null);
+        }
       }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Laden van gegevens mislukt");
+    } finally {
+      setFetching(false);
     }
-    setFetching(false);
   }, []);
 
   useEffect(() => {
@@ -70,6 +77,15 @@ export default function SpelerPage() {
 
   if (loading || fetching) {
     return <div className="py-10 text-center text-gray-400">🎯 Laden...</div>;
+  }
+
+  if (error) {
+    return (
+      <div>
+        <Nav />
+        <p className="py-10 text-center text-gray-500">{error}</p>
+      </div>
+    );
   }
 
   const next = rows[0];

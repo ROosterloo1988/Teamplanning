@@ -68,18 +68,22 @@ export default function LoginPage() {
     setEnterError(null);
     setUnlockPassword("");
     if (account.rol === "SPELER") {
-      void doEnter(account.id);
+      void doEnter(account.id, account.rol);
     } else {
       setSelected(account);
     }
   }
 
-  async function doEnter(userId: number, password?: string) {
+  async function doEnter(userId: number, rol: AccountOption["rol"], password?: string) {
     setEnterError(null);
     setEntering(true);
     try {
       await enter(userId, password);
-      router.push("/speler");
+      // Landingspagina per rol: een beheer- of captain-account hoeft geen
+      // gekoppeld spelerprofiel te hebben (bv. het initiele bootstrap-account),
+      // dus die sturen we niet standaard naar /speler.
+      const destination = rol === "BEHEER" ? "/beheer" : rol === "CAPTAIN" ? "/captain" : "/speler";
+      router.push(destination);
     } catch (err) {
       setEnterError(err instanceof ApiError ? err.message : "Inloggen mislukt");
     } finally {
@@ -90,7 +94,7 @@ export default function LoginPage() {
   async function handleUnlockSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!selected) return;
-    await doEnter(selected.id, unlockPassword);
+    await doEnter(selected.id, selected.rol, unlockPassword);
   }
 
   if (checkingTeamToken) {
