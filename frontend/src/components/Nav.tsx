@@ -27,6 +27,9 @@ export function Nav() {
         <Link href="/geschiedenis" className="whitespace-nowrap hover:text-brand">
           Historie
         </Link>
+        <Link href="/overzicht" className="whitespace-nowrap hover:text-brand">
+          Overzicht
+        </Link>
       </div>
       <div className="flex items-center gap-3">
         {(user.rol === "CAPTAIN" || user.rol === "BEHEER") && (

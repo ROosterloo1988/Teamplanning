@@ -58,6 +58,10 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
   ongeluk fout ingevuld worden.
 - **Wedstrijdhistorie**: **Geschiedenis** (voor alle rollen) toont afgelopen
   wedstrijden met de gepubliceerde opstelling, filterbaar per seizoen.
+- **Overzicht** (voor alle rollen): een alleen-lezen matrix van wedstrijd ×
+  speler met per cel een kleurenbolletje (🟢/🔴/🟡/⚪), zodat spelers
+  onderling kunnen zien wie wel of niet kan — handig om een ruil te
+  regelen. Filterbaar per seizoen en standaard alleen komende wedstrijden.
 - **In-app notificatiecentrum**: een bel-icoon met ongelezen-badge in de
   navigatie en een **Meldingen**-pagina. Spelers met een account krijgen een
   melding bij een nieuwe wedstrijd en bij een gepubliceerde opstelling.
