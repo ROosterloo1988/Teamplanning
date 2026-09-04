@@ -30,6 +30,7 @@ export default function SpelerPage() {
   const [busy, setBusy] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedMatchId, setExpandedMatchId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setFetching(true);
@@ -142,44 +143,77 @@ export default function SpelerPage() {
           )}
 
           <h3 className="mb-3 mt-6 font-medium">Kun je spelen?</h3>
-          <div className="space-y-2">
-            <StatusChoiceButton
-              label="🟢 JA, ik kan"
-              active={next.availability?.status === "AVAILABLE"}
-              disabled={busy}
-              onClick={() => setStatus(next.match.id, "AVAILABLE")}
-              color="green"
-            />
-            <StatusChoiceButton
-              label="🔴 NEE, ik kan niet"
-              active={next.availability?.status === "UNAVAILABLE"}
-              disabled={busy}
-              onClick={() => setStatus(next.match.id, "UNAVAILABLE")}
-              color="red"
-            />
-            <StatusChoiceButton
-              label="🟡 ALLEEN ALS HET NODIG IS"
-              active={next.availability?.status === "IF_NEEDED"}
-              disabled={busy}
-              onClick={() => setStatus(next.match.id, "IF_NEEDED")}
-              color="yellow"
-            />
-          </div>
+          <AvailabilityButtons
+            status={next.availability?.status}
+            disabled={busy}
+            onChoose={(status) => setStatus(next.match.id, status)}
+          />
         </div>
       )}
 
       <h3 className="mb-3 font-medium">Mijn komende wedstrijden</h3>
+      <p className="mb-2 text-sm text-gray-500">Tik op een wedstrijd om je beschikbaarheid alvast in te vullen.</p>
       <ul className="divide-y divide-gray-200 rounded-xl border border-gray-200 bg-white">
         {upcoming.map(({ match, availability }) => (
-          <li key={match.id} className="flex items-center justify-between px-4 py-3 text-sm">
-            <span className="text-gray-500">{formatMatchDateShort(match.datum)}</span>
-            <span>{match.thuisteam} - {match.uitteam}</span>
-            <span>
-              <StatusBadge status={availability?.status ?? "NO_RESPONSE"} />
-            </span>
+          <li key={match.id}>
+            <button
+              onClick={() => setExpandedMatchId((id) => (id === match.id ? null : match.id))}
+              className="flex w-full items-center justify-between px-4 py-3 text-left text-sm hover:bg-gray-50"
+            >
+              <span className="text-gray-500">{formatMatchDateShort(match.datum)}</span>
+              <span>{match.thuisteam} - {match.uitteam}</span>
+              <span>
+                <StatusBadge status={availability?.status ?? "NO_RESPONSE"} />
+              </span>
+            </button>
+            {expandedMatchId === match.id && (
+              <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
+                <AvailabilityButtons
+                  status={availability?.status}
+                  disabled={busy}
+                  onChoose={(status) => setStatus(match.id, status)}
+                />
+              </div>
+            )}
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function AvailabilityButtons({
+  status,
+  disabled,
+  onChoose,
+}: {
+  status: AvailabilityStatus | undefined;
+  disabled?: boolean;
+  onChoose: (status: AvailabilityStatus) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <StatusChoiceButton
+        label="🟢 Ja, ik kan"
+        active={status === "AVAILABLE"}
+        disabled={disabled}
+        onClick={() => onChoose("AVAILABLE")}
+        color="green"
+      />
+      <StatusChoiceButton
+        label="🔴 Nee, ik kan niet"
+        active={status === "UNAVAILABLE"}
+        disabled={disabled}
+        onClick={() => onChoose("UNAVAILABLE")}
+        color="red"
+      />
+      <StatusChoiceButton
+        label="🟡 Alleen als het nodig is"
+        active={status === "IF_NEEDED"}
+        disabled={disabled}
+        onClick={() => onChoose("IF_NEEDED")}
+        color="yellow"
+      />
     </div>
   );
 }
