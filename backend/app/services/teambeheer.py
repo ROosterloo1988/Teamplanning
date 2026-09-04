@@ -48,6 +48,22 @@ class TeambeheerFixture:
     score: str
 
 
+@dataclass
+class Venue:
+    """Een speelgelegenheid uit /web/speelgelegenheden — cn is de enige
+    stabiele identifier (zit ook in de speelgelegenheid-link op /web/teams)."""
+
+    cn: int
+    naam: str
+    adres: str
+    plaats: str
+
+    @property
+    def volledig_adres(self) -> str:
+        parts = [p.strip() for p in (self.adres, self.plaats) if p and p.strip()]
+        return ", ".join(parts)
+
+
 def season_code(startjaar: int) -> str:
     """2026 -> '26-27', zoals gebruikt in de s=-queryparameter."""
     return f"{startjaar % 100:02d}-{(startjaar + 1) % 100:02d}"
@@ -77,12 +93,23 @@ def _team_id_from_href(href: str) -> int | None:
         return None
 
 
-def fetch_jaarprogramma(bond_id: int, s_code: str, poule: str) -> str:
-    url = f"{settings.TEAMBEHEER_BASE_URL}/web/jaarprogramma"
+def _venue_cn_from_href(href: str) -> int | None:
+    query = parse_qs(urlparse(href).query)
+    values = query.get("cn")
+    if not values:
+        return None
+    try:
+        return int(values[0])
+    except ValueError:
+        return None
+
+
+def _fetch_page(path: str, params: dict) -> str:
+    url = f"{settings.TEAMBEHEER_BASE_URL}{path}"
     try:
         response = httpx.get(
             url,
-            params={"d": bond_id, "s": s_code, "div": poule},
+            params=params,
             timeout=20,
             follow_redirects=True,
             headers={"User-Agent": "Mozilla/5.0 (compatible; TeamplanningSync/1.0)"},
@@ -91,6 +118,18 @@ def fetch_jaarprogramma(bond_id: int, s_code: str, poule: str) -> str:
     except httpx.HTTPError as exc:
         raise TeambeheerFetchError(f"Kon Teambeheer niet bereiken: {exc}") from exc
     return response.text
+
+
+def fetch_jaarprogramma(bond_id: int, s_code: str, poule: str) -> str:
+    return _fetch_page("/web/jaarprogramma", {"d": bond_id, "s": s_code, "div": poule})
+
+
+def fetch_speelgelegenheden(bond_id: int, s_code: str) -> str:
+    return _fetch_page("/web/speelgelegenheden", {"d": bond_id, "s": s_code})
+
+
+def fetch_teams(bond_id: int, s_code: str) -> str:
+    return _fetch_page("/web/teams", {"d": bond_id, "s": s_code})
 
 
 def parse_jaarprogramma(html: str) -> list[TeambeheerFixture]:
@@ -146,6 +185,82 @@ def parse_jaarprogramma(html: str) -> list[TeambeheerFixture]:
     return fixtures
 
 
+def parse_speelgelegenheden(html: str) -> dict[int, Venue]:
+    """/web/speelgelegenheden -> cn -> Venue (naam, adres, plaats)."""
+    soup = BeautifulSoup(html, "html.parser")
+    venues: dict[int, Venue] = {}
+
+    table = soup.find("table", id="datatable-l")
+    tbody = table.find("tbody") if table else None
+    if not tbody:
+        return venues
+
+    for row in tbody.find_all("tr", recursive=False):
+        cells = row.find_all("td", recursive=False)
+        if len(cells) < 3:
+            continue
+        link = cells[0].find("a")
+        if not link:
+            continue
+        cn = _venue_cn_from_href(link.get("href", ""))
+        if cn is None:
+            continue
+        venues[cn] = Venue(
+            cn=cn,
+            naam=link.get_text(strip=True),
+            adres=cells[1].get_text(strip=True),
+            plaats=cells[2].get_text(strip=True),
+        )
+    return venues
+
+
+def parse_teams(html: str) -> dict[int, int]:
+    """/web/teams -> team-id (t=) -> speelgelegenheid-cn (cn=)."""
+    soup = BeautifulSoup(html, "html.parser")
+    team_venue: dict[int, int] = {}
+
+    table = soup.find("table", id="datatable-l")
+    tbody = table.find("tbody") if table else None
+    if not tbody:
+        return team_venue
+
+    for row in tbody.find_all("tr", recursive=False):
+        cells = row.find_all("td", recursive=False)
+        if len(cells) < 2:
+            continue
+        team_a = cells[0].find("a")
+        venue_a = cells[1].find("a")
+        if not team_a or not venue_a:
+            continue
+        team_id = _team_id_from_href(team_a.get("href", ""))
+        cn = _venue_cn_from_href(venue_a.get("href", ""))
+        if team_id is None or cn is None:
+            continue
+        team_venue[team_id] = cn
+    return team_venue
+
+
+def team_venue_addresses(bond_id: int, s_code: str) -> dict[int, str]:
+    """Koppelt elk team-id aan het volledige adres van zijn speelgelegenheid,
+    via /web/teams (team -> cn) en /web/speelgelegenheden (cn -> adres). Geeft
+    een lege dict terug (in plaats van te crashen) als een van beide feeds
+    niet opgehaald kan worden — locatie is een handig extraatje, geen
+    voorwaarde om wedstrijden te kunnen synchroniseren."""
+    try:
+        teams_html = fetch_teams(bond_id, s_code)
+        venues_html = fetch_speelgelegenheden(bond_id, s_code)
+    except TeambeheerFetchError:
+        return {}
+
+    team_venue = parse_teams(teams_html)
+    venues = parse_speelgelegenheden(venues_html)
+    return {
+        team_id: venues[cn].volledig_adres
+        for team_id, cn in team_venue.items()
+        if cn in venues and venues[cn].volledig_adres
+    }
+
+
 def _our_fixtures(fixtures: list[TeambeheerFixture], team_id: int) -> list[TeambeheerFixture]:
     return [f for f in fixtures if f.thuis_id == team_id or f.uit_id == team_id]
 
@@ -159,6 +274,7 @@ def preview_team_fixtures(db: Session, config: TeambeheerConfig, season: Season)
     s_code = season_code(season.startjaar)
     html = fetch_jaarprogramma(config.bond_id, s_code, config.poule)
     fixtures = _our_fixtures(parse_jaarprogramma(html), config.team_id)
+    venue_addresses = team_venue_addresses(config.bond_id, s_code)
 
     preview: list[dict] = []
     for fixture in fixtures:
@@ -177,6 +293,7 @@ def preview_team_fixtures(db: Session, config: TeambeheerConfig, season: Season)
                 "datum_raw": fixture.datum_raw,
                 "thuisteam": fixture.thuis_naam.strip(),
                 "uitteam": fixture.uit_naam.strip(),
+                "locatie": venue_addresses.get(fixture.thuis_id),
                 "status": status,
             }
         )
@@ -192,6 +309,7 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
     s_code = season_code(season.startjaar)
     html = fetch_jaarprogramma(config.bond_id, s_code, config.poule)
     fixtures = _our_fixtures(parse_jaarprogramma(html), config.team_id)
+    venue_addresses = team_venue_addresses(config.bond_id, s_code)
 
     created = updated = unchanged = skipped_no_date = 0
     resolved_team_naam: str | None = None
@@ -211,6 +329,7 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
 
         thuisteam = fixture.thuis_naam.strip()
         uitteam = fixture.uit_naam.strip()
+        locatie = venue_addresses.get(fixture.thuis_id)
         external_id = _external_id(config, s_code, fixture)
 
         match = db.query(Match).filter(Match.external_id == external_id).first()
@@ -231,6 +350,10 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
                 updated += 1
             else:
                 unchanged += 1
+            # Alleen aanvullen als er nog geen locatie staat — een handmatige
+            # correctie via Beheer > Wedstrijden wordt nooit overschreven.
+            if not match.locatie and locatie:
+                match.locatie = locatie
             continue
 
         match = Match(
@@ -241,7 +364,7 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
             datum=datum,
             thuisteam=thuisteam,
             uitteam=uitteam,
-            locatie=None,
+            locatie=locatie,
             status=MatchStatus.GEPLAND,
         )
         db.add(match)

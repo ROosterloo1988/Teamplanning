@@ -12,6 +12,7 @@ import {
 } from "@/lib/types";
 import { Nav } from "@/components/Nav";
 import { BeheerNav } from "@/components/BeheerNav";
+import { LocatieLink } from "@/components/StatusBadge";
 
 const STATUS_LABELS: Record<string, string> = {
   nieuw: "🆕 Nieuw",
@@ -273,6 +274,7 @@ export default function BeheerTeambeheerPage() {
                   <th className="px-3 py-2 font-medium">Datum</th>
                   <th className="px-3 py-2 font-medium">Thuis</th>
                   <th className="px-3 py-2 font-medium">Uit</th>
+                  <th className="px-3 py-2 font-medium">Locatie</th>
                   <th className="px-3 py-2 font-medium">Status</th>
                 </tr>
               </thead>
@@ -283,12 +285,15 @@ export default function BeheerTeambeheerPage() {
                     <td className="px-3 py-2">{f.datum ?? f.datum_raw}</td>
                     <td className="px-3 py-2">{f.thuisteam}</td>
                     <td className="px-3 py-2">{f.uitteam}</td>
+                    <td className="px-3 py-2">
+                      {f.locatie ? <LocatieLink locatie={f.locatie} /> : "—"}
+                    </td>
                     <td className="px-3 py-2">{STATUS_LABELS[f.status] ?? f.status}</td>
                   </tr>
                 ))}
                 {preview.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-3 py-6 text-center text-gray-400">
+                    <td colSpan={6} className="px-3 py-6 text-center text-gray-400">
                       Geen wedstrijden gevonden voor dit team in deze poule
                     </td>
                   </tr>

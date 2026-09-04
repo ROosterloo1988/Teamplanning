@@ -139,6 +139,7 @@ export interface TeambeheerFixturePreview {
   datum_raw: string;
   thuisteam: string;
   uitteam: string;
+  locatie: string | null;
   status: TeambeheerFixtureStatus;
 }
 
