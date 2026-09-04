@@ -97,8 +97,13 @@ ondersteuning met gescheiden spelers/captains/wedstrijden per team.
   **Beheer → Instellingen**. Captains en beheerders wijzigen hun eigen
   ontgrendelwachtwoord zelf via het ⚙️-icoon in de navigatie (**Mijn
   account**), zonder tussenkomst van Beheer → Spelers.
-- Het teamwachtwoord blijft op het toestel onthouden (90 dagen); uitloggen
-  brengt je terug naar de naam-kiezer, niet naar het teamwachtwoord-scherm.
+- Het teamwachtwoord blijft op het toestel onthouden (1 jaar), en ook de
+  persoonlijke sessie na het kiezen van je naam blijft 1 jaar geldig — op
+  een eigen toestel (zeker als PWA geinstalleerd) hoeft niemand steeds
+  opnieuw wachtwoorden te typen. Uitloggen brengt je terug naar de
+  naam-kiezer, niet naar het teamwachtwoord-scherm. Klik je per ongeluk op
+  de verkeerde naam bij een captain/beheer-account, dan sluit nogmaals op
+  die naam tikken (of "Annuleren") het ontgrendelformulier weer.
 
 ## Techniek
 

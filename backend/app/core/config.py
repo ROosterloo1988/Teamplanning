@@ -10,8 +10,12 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+psycopg2://teamplanning:teamplanning@db:5432/teamplanning"
 
     SECRET_KEY: str = "change-me-in-production"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
-    TEAM_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 90  # 90 dagen: alleen een "voordeur", geen echte login
+    # Beide bewust ruim: dit is een team-app op eigen toestellen (vaak als
+    # PWA geinstalleerd), niet een gedeelde/publieke computer — spelers en
+    # captain/beheer moeten niet steeds opnieuw hun wachtwoord hoeven in te
+    # typen. 1 jaar; "Uitloggen" logt nog steeds direct uit.
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 365  # 1 jaar
+    TEAM_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 365  # 1 jaar: alleen een "voordeur", geen echte login
     ALGORITHM: str = "HS256"
 
     # Gedeeld teamwachtwoord voor de naam-kiezer (bootstrap-waarde, zie
