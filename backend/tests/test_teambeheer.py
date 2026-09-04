@@ -125,6 +125,7 @@ def test_parse_speelgelegenheden():
     assert gouverneur.adres == "Munstersestraat 2"
     assert gouverneur.plaats == "Raalte"
     assert gouverneur.volledig_adres == "Munstersestraat 2, Raalte"
+    assert gouverneur.label == "Café de Gouverneur, Munstersestraat 2, Raalte"
 
 
 def test_parse_teams():
@@ -146,8 +147,8 @@ def test_team_venue_addresses_combines_both_feeds(monkeypatch):
     )
 
     addresses = teambeheer_module.team_venue_addresses(11, "26-27")
-    assert addresses[3852] == "Munstersestraat 2, Raalte"  # DE GOUV
-    assert addresses[3854] == "Langstraat 44, Wijhe"  # Het Praothuus 2
+    assert addresses[3852] == "Café de Gouverneur, Munstersestraat 2, Raalte"  # DE GOUV
+    assert addresses[3854] == "Het Praothuus, Langstraat 44, Wijhe"  # Het Praothuus 2
 
 
 def test_team_venue_addresses_degrades_gracefully_on_fetch_error(monkeypatch):

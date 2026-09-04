@@ -26,7 +26,7 @@ export default function SpelerPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [rows, setRows] = useState<Row[]>([]);
-  const [lineup, setLineup] = useState<LineupOut | null>(null);
+  const [lineups, setLineups] = useState<Map<number, LineupOut>>(new Map());
   const [busy, setBusy] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,14 +46,18 @@ export default function SpelerPage() {
         .sort((a, b) => a.match.datum.localeCompare(b.match.datum));
       setRows(combined);
 
-      if (combined.length > 0) {
-        try {
-          const nextLineup = await api.get<LineupOut>(`/lineups/match/${combined[0].match.id}`);
-          setLineup(nextLineup.published ? nextLineup : null);
-        } catch {
-          setLineup(null);
-        }
-      }
+      // Een captain kan de opstelling al voor meerdere wedstrijden vooruit
+      // publiceren, dus niet alleen voor de eerstvolgende wedstrijd ophalen.
+      const lineupResults = await Promise.all(
+        combined.map(({ match }) =>
+          api.get<LineupOut>(`/lineups/match/${match.id}`).catch(() => null)
+        )
+      );
+      const publishedLineups = new Map<number, LineupOut>();
+      lineupResults.forEach((result) => {
+        if (result && result.published) publishedLineups.set(result.match_id, result);
+      });
+      setLineups(publishedLineups);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Laden van gegevens mislukt");
     } finally {
@@ -97,6 +101,7 @@ export default function SpelerPage() {
 
   const next = rows[0];
   const upcoming = rows;
+  const nextLineup = next ? lineups.get(next.match.id) ?? null : null;
   const showReminder =
     !!next &&
     (next.availability?.status ?? "NO_RESPONSE") === "NO_RESPONSE" &&
@@ -133,10 +138,10 @@ export default function SpelerPage() {
             </p>
           )}
 
-          {lineup && (
+          {nextLineup && (
             <div className="mt-4 rounded-lg bg-green-50 p-3 text-sm">
               <p className="mb-1 font-medium text-green-800">🎯 Opstelling bekend</p>
-              <p className="text-green-700">{lineup.player_naam.join(", ")}</p>
+              <p className="text-green-700">{nextLineup.player_naam.join(", ")}</p>
             </div>
           )}
 
@@ -152,20 +157,35 @@ export default function SpelerPage() {
       <h3 className="mb-3 font-medium">Mijn komende wedstrijden</h3>
       <p className="mb-2 text-sm text-gray-500">Tik op een wedstrijd om je beschikbaarheid alvast in te vullen.</p>
       <ul className="divide-y divide-gray-200 rounded-xl border border-gray-200 bg-white">
-        {upcoming.map(({ match, availability }) => (
+        {upcoming.map(({ match, availability }) => {
+          const matchLineup = lineups.get(match.id);
+          return (
           <li key={match.id}>
             <button
               onClick={() => setExpandedMatchId((id) => (id === match.id ? null : match.id))}
-              className="flex w-full items-center justify-between px-4 py-3 text-left text-sm hover:bg-gray-50"
+              className="grid w-full grid-cols-[4.5rem_1fr_auto] items-start gap-2 px-4 py-3 text-left text-sm hover:bg-gray-50"
             >
-              <span className="text-gray-500">{formatMatchDateShort(match.datum)}</span>
-              <span>{match.thuisteam} - {match.uitteam}</span>
-              <span>
+              <span className="whitespace-nowrap pt-0.5 text-gray-500">{formatMatchDateShort(match.datum)}</span>
+              <span className="min-w-0">
+                {match.thuisteam} - {match.uitteam}
+                {matchLineup && (
+                  <span className="ml-1.5" title="Opstelling al bekend">
+                    🎯
+                  </span>
+                )}
+              </span>
+              <span className="pt-0.5">
                 <StatusBadge status={availability?.status ?? "NO_RESPONSE"} />
               </span>
             </button>
             {expandedMatchId === match.id && (
               <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
+                {matchLineup && (
+                  <p className="mb-3 text-sm">
+                    <span className="font-medium text-green-800">🎯 Opstelling: </span>
+                    <span className="text-green-700">{matchLineup.player_naam.join(", ")}</span>
+                  </p>
+                )}
                 <AvailabilityButtons
                   status={availability?.status}
                   disabled={busy}
@@ -174,7 +194,8 @@ export default function SpelerPage() {
               </div>
             )}
           </li>
-        ))}
+          );
+        })}
       </ul>
     </div>
   );
@@ -239,7 +260,7 @@ function StatusChoiceButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`w-full rounded-lg border-2 py-3 text-center font-semibold transition disabled:opacity-50 ${colorClasses}`}
+      className={`w-full rounded-lg border-2 px-4 py-3 text-left font-semibold transition disabled:opacity-50 ${colorClasses}`}
     >
       {label}
     </button>

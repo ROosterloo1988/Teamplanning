@@ -9,23 +9,23 @@ export function Nav() {
   if (!user) return null;
 
   return (
-    <nav className="mb-6 flex items-center justify-between border-b border-gray-200 pb-3">
-      <div className="flex gap-4 text-sm font-medium">
-        <Link href="/speler" className="hover:text-brand">
-          🎯 Speler
+    <nav className="mb-6 flex flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b border-gray-200 pb-3">
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-medium">
+        <Link href="/speler" className="whitespace-nowrap hover:text-brand">
+          Speler
         </Link>
         {(user.rol === "CAPTAIN" || user.rol === "BEHEER") && (
-          <Link href="/captain" className="hover:text-brand">
+          <Link href="/captain" className="whitespace-nowrap hover:text-brand">
             Captain
           </Link>
         )}
         {user.rol === "BEHEER" && (
-          <Link href="/beheer" className="hover:text-brand">
+          <Link href="/beheer" className="whitespace-nowrap hover:text-brand">
             Beheer
           </Link>
         )}
-        <Link href="/geschiedenis" className="hover:text-brand">
-          Geschiedenis
+        <Link href="/geschiedenis" className="whitespace-nowrap hover:text-brand">
+          Historie
         </Link>
       </div>
       <div className="flex items-center gap-3">
@@ -35,7 +35,7 @@ export function Nav() {
           </Link>
         )}
         <NotificationBell />
-        <button onClick={logout} className="text-sm text-gray-500 hover:text-gray-800">
+        <button onClick={logout} className="whitespace-nowrap text-sm text-gray-500 hover:text-gray-800">
           Uitloggen
         </button>
       </div>
