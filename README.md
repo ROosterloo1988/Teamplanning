@@ -44,9 +44,10 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
 - **Herinneringen (in-app)**: spelers zien een banner als ze binnen 3 dagen
   voor de wedstrijd nog niet gereageerd hebben; captains zien op hun
   wedstrijdenoverzicht welke wedstrijden nog ontbrekende reacties hebben.
-- **Betere statistieken**: **Beheer → Statistieken** toont per speler het
+- **Betere statistieken**: **Statistieken** toont per speler het
   reactiepercentage en de verdeling kan/kan niet/indien nodig/geen
-  antwoord/aantal keer opgesteld.
+  antwoord/aantal keer opgesteld — voor beheer én captain (captain ziet
+  hierbij geen beheer-only sub-navigatie).
 
 **Fase 3** (ontwerp sectie 16):
 
