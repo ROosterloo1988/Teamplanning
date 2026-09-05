@@ -18,6 +18,7 @@ from app.models.match import Match
 from app.models.notification import Notification
 from app.models.season import Season
 from app.models.teambeheer import TeambeheerConfig
+from app.services.notifications import send_response_reminders
 from app.services.teambeheer import TeambeheerFetchError, sync_team_fixtures
 
 logger = logging.getLogger(__name__)
@@ -85,6 +86,21 @@ def run_notification_cleanup() -> None:
         db.close()
 
 
+def run_response_reminders() -> None:
+    """Stuurt een herinnering (in-app + push) naar spelers die nog niet
+    gereageerd hebben op een wedstrijd die nu op de REMINDER_DAYS_BEFORE-
+    deadline zit."""
+    db = SessionLocal()
+    try:
+        send_response_reminders(db, settings.REMINDER_DAYS_BEFORE)
+        db.commit()
+    except Exception:
+        logger.exception("Onverwachte fout bij versturen van reactie-herinneringen")
+        db.rollback()
+    finally:
+        db.close()
+
+
 def start_scheduler() -> None:
     if settings.TEAMBEHEER_AUTO_SYNC:
         scheduler.add_job(
@@ -101,6 +117,14 @@ def start_scheduler() -> None:
         hour=settings.TEAMBEHEER_SYNC_HOUR,
         minute=(settings.TEAMBEHEER_SYNC_MINUTE + 15) % 60,
         id="notification_cleanup",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_response_reminders,
+        "cron",
+        hour=9,
+        minute=0,
+        id="response_reminders",
         replace_existing=True,
     )
     scheduler.start()

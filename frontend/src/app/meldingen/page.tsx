@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { NotificationOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
+import { PushToggle } from "@/components/PushToggle";
 
 function formatTimestamp(iso: string): string {
   return new Date(iso).toLocaleString("nl-NL", {
@@ -58,6 +59,7 @@ export default function MeldingenPage() {
   return (
     <div>
       <Nav />
+      <PushToggle />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Meldingen</h1>
         {hasUnread && (

@@ -28,6 +28,14 @@ class Settings(BaseSettings):
     # functioneel ontwerp v1 sectie 11.
     REMINDER_DAYS_BEFORE: int = 3
 
+    # Web Push (VAPID) — voor herinneringen op het toestel zelf, zie
+    # functioneel ontwerp v1 sectie 11/16. Leeg (geen sleutels) betekent:
+    # push staat uit, de rest van de app werkt gewoon door. Genereer een
+    # sleutelpaar met bv. `vapid --gen` (py-vapid) en zet ze in .env.
+    VAPID_PUBLIC_KEY: str = ""
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_CLAIMS_EMAIL: str = "mailto:info@degouv.nl"
+
     # Teambeheer SDC jaarprogramma-feed (ontwerp secties 6 en 7).
     TEAMBEHEER_BASE_URL: str = "https://feeds.teambeheer.nl"
     TEAMBEHEER_AUTO_SYNC: bool = True
