@@ -27,8 +27,12 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
   per speler de status (kan / kan niet / indien nodig) en een ster (★) om
   die speler in de opstelling te zetten, in plaats van twee aparte lijsten
   onder elkaar.
-- **Beheer → Spelers** beheert spelers: aanmaken, naam/rol/e-mailadres/actief
-  bewerken, ontgrendelwachtwoord wijzigen en verwijderen. E-mailadres is
+- **Beheer → Spelers** beheert spelers: aanmaken, naam/rol/e-mailadres
+  bewerken, ontgrendelwachtwoord wijzigen en op inactief zetten. Een speler
+  wordt nooit echt verwijderd — dat zou ook zijn beschikbaarheids- en
+  opstellinggeschiedenis (dus statistieken) wegtrekken. Op inactief zetten
+  verbergt 'm uit de naam-kiezer en blokkeert inloggen, met de geschiedenis
+  gewoon intact; weer op actief zetten kan altijd. E-mailadres is
   optioneel (alleen nodig als je het echt wilt bijhouden — voor inloggen of
   publiceren is het niet vereist).
 - **Beheer → Wedstrijden** laat bestaande wedstrijden bewerken (datum, teams,
@@ -67,7 +71,10 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
   alleen komende wedstrijden.
 - **In-app notificatiecentrum**: een bel-icoon met ongelezen-badge in de
   navigatie en een **Meldingen**-pagina. Spelers met een account krijgen een
-  melding bij een nieuwe wedstrijd en bij een gepubliceerde opstelling.
+  melding bij een nieuwe wedstrijd en bij een gepubliceerde opstelling. Een
+  nachtelijke opruimtaak houdt de tabel klein: gelezen meldingen verdwijnen
+  na 30 dagen, en meldingen van een seizoen dat niet meer het actieve
+  seizoen is worden meteen opgeruimd.
 - **PWA**: de app heeft een manifest en iconen zodat spelers hem op hun
   telefoon kunnen "installeren" (add to home screen).
 
@@ -104,6 +111,10 @@ ondersteuning met gescheiden spelers/captains/wedstrijden per team.
   naam-kiezer, niet naar het teamwachtwoord-scherm. Klik je per ongeluk op
   de verkeerde naam bij een captain/beheer-account, dan sluit nogmaals op
   die naam tikken (of "Annuleren") het ontgrendelformulier weer.
+- De drie wachtwoord-checks die zonder inloggen te bereiken zijn
+  (teamwachtwoord, ontgrendelwachtwoord, e-mail/wachtwoord-login) zijn
+  per IP-adres beperkt tot 10 pogingen per 5 minuten — voorkomt dat het
+  gedeelde teamwachtwoord vanaf het internet ongelimiteerd te gokken is.
 
 ## Techniek
 
@@ -219,6 +230,12 @@ wedstrijd. Zet `TEAMBEHEER_AUTO_SYNC=false` om dat uit te schakelen.
 De parser is los van een live verbinding getest tegen een echte, opgeslagen
 Teambeheer-pagina (`backend/tests/fixtures/`) — zie `backend/tests/`
 (`pip install -r requirements-dev.txt && pytest`).
+
+## CI
+
+`.github/workflows/ci.yml` draait bij elke push/PR de backendtests
+(`pytest`) en de frontendbuild (`npm run build`) — vangt de meeste
+regressies af voordat ze op de server terechtkomen.
 
 ## Databaseschema
 

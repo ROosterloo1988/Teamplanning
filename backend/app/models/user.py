@@ -17,5 +17,11 @@ class User(Base):
     rol: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.SPELER, nullable=False)
     actief: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Timestamp van de laatste wachtwoordwijziging, meegenomen als claim in
+    # het JWT — zo maakt een wachtwoordwijziging eerder uitgegeven tokens
+    # (die tot een jaar geldig zijn) meteen ongeldig. NULL voor accounts van
+    # vóór deze kolom; die blijven gewoon werken tot de eerstvolgende
+    # wachtwoordwijziging.
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     player: Mapped["Player"] = relationship(back_populates="user", uselist=False)

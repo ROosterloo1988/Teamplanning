@@ -16,10 +16,18 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(subject: str) -> str:
-    """Normaal gebruikerstoken: subject is het e-mailadres van de user."""
+def create_access_token(subject: str, password_changed_at: datetime | None = None) -> str:
+    """Normaal gebruikerstoken: subject is user.id (als string).
+
+    password_changed_at wordt als claim meegenomen zodat een latere
+    wachtwoordwijziging dit token meteen ongeldig maakt (zie
+    app.api.deps.get_current_user) — belangrijk nu tokens tot een jaar
+    geldig zijn.
+    """
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode = {"sub": subject, "type": "user", "exp": expire}
+    if password_changed_at is not None:
+        to_encode["pwd_ts"] = int(password_changed_at.timestamp())
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
