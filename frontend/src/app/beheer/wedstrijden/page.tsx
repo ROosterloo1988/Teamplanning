@@ -69,10 +69,13 @@ export default function BeheerWedstrijdenPage() {
       router.replace("/speler");
       return;
     }
-    Promise.all([loadMatches(""), api.get<SeasonOut[]>("/seasons")]).then(([, seasonsData]) => {
+    api.get<SeasonOut[]>("/seasons").then(async (seasonsData) => {
       setSeasons(seasonsData);
       const active = seasonsData.find((s) => s.actief);
       if (active) setForm((f) => ({ ...f, season_id: String(active.id) }));
+      const initial = active ? String(active.id) : "";
+      setSeasonFilter(initial);
+      await loadMatches(initial);
     });
   }, [user, loading, router, loadMatches]);
 

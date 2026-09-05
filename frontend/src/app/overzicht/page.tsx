@@ -55,8 +55,15 @@ export default function OverzichtPage() {
       router.replace("/login");
       return;
     }
-    Promise.all([load("", true), api.get<SeasonOut[]>("/seasons")])
-      .then(([, seasonsData]) => setSeasons(seasonsData))
+    api
+      .get<SeasonOut[]>("/seasons")
+      .then(async (seasonsData) => {
+        setSeasons(seasonsData);
+        const active = seasonsData.find((s) => s.actief);
+        const initial = active ? String(active.id) : "";
+        setSeasonFilter(initial);
+        await load(initial, true);
+      })
       .finally(() => setFetching(false));
   }, [user, loading, router, load]);
 

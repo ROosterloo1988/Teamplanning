@@ -32,8 +32,15 @@ export default function BeheerStatistiekenPage() {
       router.replace("/speler");
       return;
     }
-    Promise.all([loadStats(""), api.get<SeasonOut[]>("/seasons")])
-      .then(([, seasonsData]) => setSeasons(seasonsData))
+    api
+      .get<SeasonOut[]>("/seasons")
+      .then(async (seasonsData) => {
+        setSeasons(seasonsData);
+        const active = seasonsData.find((s) => s.actief);
+        const initial = active ? String(active.id) : "";
+        setSeasonFilter(initial);
+        await loadStats(initial);
+      })
       .finally(() => setFetching(false));
   }, [user, loading, router, loadStats]);
 
