@@ -31,6 +31,16 @@ def get_current_user(
     user = db.query(User).filter(User.id == user_id).first()
     if not user or not user.actief:
         raise _credentials_exception
+
+    token_pwd_ts = payload.get("pwd_ts")
+    if token_pwd_ts is not None and user.password_changed_at is not None:
+        if int(user.password_changed_at.timestamp()) != int(token_pwd_ts):
+            # Wachtwoord is gewijzigd na het uitgeven van dit token: met
+            # tokens die tot een jaar geldig zijn moet een wijziging oudere
+            # tokens meteen afkeuren, anders blijft een gestolen/gedeeld
+            # token bruikbaar ondanks het nieuwe wachtwoord.
+            raise _credentials_exception
+
     return user
 
 

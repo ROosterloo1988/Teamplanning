@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.api.routes import (
     admin,
@@ -17,6 +19,7 @@ from app.api.routes import (
     teambeheer,
 )
 from app.core.config import settings
+from app.db.session import get_db
 
 # Zorgt dat alle modellen bij startup geregistreerd zijn bij SQLAlchemy's
 # mapper-registry — anders faalt een relationship() naar een model dat geen
@@ -58,5 +61,9 @@ app.include_router(teambeheer.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/api/health")
-def health():
+def health(db: Session = Depends(get_db)):
+    """Doet een echte databasequery, niet alleen 'is het proces gestart' —
+    anders blijft dit 'ok' zeggen terwijl Postgres onbereikbaar is, wat het
+    onbruikbaar maakt voor monitoring."""
+    db.execute(text("SELECT 1"))
     return {"status": "ok"}

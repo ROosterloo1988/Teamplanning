@@ -8,11 +8,14 @@ te breken.
 """
 
 import logging
+from datetime import datetime, timedelta, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.core.config import settings
 from app.db.session import SessionLocal
+from app.models.match import Match
+from app.models.notification import Notification
 from app.models.season import Season
 from app.models.teambeheer import TeambeheerConfig
 from app.services.teambeheer import TeambeheerFetchError, sync_team_fixtures
@@ -20,6 +23,8 @@ from app.services.teambeheer import TeambeheerFetchError, sync_team_fixtures
 logger = logging.getLogger(__name__)
 
 scheduler = BackgroundScheduler(timezone="UTC")
+
+NOTIFICATION_READ_RETENTION_DAYS = 30
 
 
 def run_nightly_sync() -> None:
@@ -45,15 +50,57 @@ def run_nightly_sync() -> None:
         db.close()
 
 
+def run_notification_cleanup() -> None:
+    """Ruimt de notifications-tabel op, die anders na een paar seizoenen
+    ongelimiteerd blijft groeien: gelezen meldingen ouder dan
+    NOTIFICATION_READ_RETENTION_DAYS (nog even terug te lezen op
+    Meldingen, maar niet voor altijd), en meldingen die horen bij een
+    wedstrijd uit een seizoen dat niet meer het actieve seizoen is."""
+    db = SessionLocal()
+    try:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=NOTIFICATION_READ_RETENTION_DAYS)
+        db.query(Notification).filter(
+            Notification.read_at.isnot(None), Notification.read_at < cutoff
+        ).delete(synchronize_session=False)
+
+        active_season = db.query(Season).filter(Season.actief.is_(True)).first()
+        if active_season:
+            stale_ids = [
+                row[0]
+                for row in db.query(Notification.id)
+                .join(Match, Notification.match_id == Match.id)
+                .filter(Match.season_id.isnot(None), Match.season_id != active_season.id)
+                .all()
+            ]
+            if stale_ids:
+                db.query(Notification).filter(Notification.id.in_(stale_ids)).delete(
+                    synchronize_session=False
+                )
+
+        db.commit()
+    except Exception:
+        logger.exception("Onverwachte fout bij opruimen van notificaties")
+        db.rollback()
+    finally:
+        db.close()
+
+
 def start_scheduler() -> None:
-    if not settings.TEAMBEHEER_AUTO_SYNC:
-        return
+    if settings.TEAMBEHEER_AUTO_SYNC:
+        scheduler.add_job(
+            run_nightly_sync,
+            "cron",
+            hour=settings.TEAMBEHEER_SYNC_HOUR,
+            minute=settings.TEAMBEHEER_SYNC_MINUTE,
+            id="teambeheer_nightly_sync",
+            replace_existing=True,
+        )
     scheduler.add_job(
-        run_nightly_sync,
+        run_notification_cleanup,
         "cron",
         hour=settings.TEAMBEHEER_SYNC_HOUR,
-        minute=settings.TEAMBEHEER_SYNC_MINUTE,
-        id="teambeheer_nightly_sync",
+        minute=(settings.TEAMBEHEER_SYNC_MINUTE + 15) % 60,
+        id="notification_cleanup",
         replace_existing=True,
     )
     scheduler.start()

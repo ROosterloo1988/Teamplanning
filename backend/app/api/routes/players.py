@@ -1,4 +1,5 @@
 import secrets
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -6,11 +7,9 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, require_beheer
 from app.core.security import hash_password
 from app.db.session import get_db
-from app.models.audit_log import AuditLog
 from app.models.availability import Availability
-from app.models.enums import UserRole
-from app.models.lineup import LineupPlayer
-from app.models.notification import Notification
+from app.models.enums import AvailabilityStatus, UserRole
+from app.models.match import Match
 from app.models.player import Player
 from app.models.user import User
 from app.schemas.player import PlayerCreate, PlayerOut
@@ -41,10 +40,20 @@ def list_players_with_accounts(db: Session = Depends(get_db)):
     ]
 
 
+def _backfill_availability(db: Session, player_id: int) -> None:
+    """Nieuwe spelers krijgen anders alleen beschikbaarheid voor wedstrijden
+    die na hun aanmaken worden aangemaakt (via sync of handmatig) — zonder
+    dit kunnen ze bestaande wedstrijden niet invullen."""
+    for (match_id,) in db.query(Match.id).all():
+        db.add(Availability(match_id=match_id, player_id=player_id, status=AvailabilityStatus.NO_RESPONSE))
+
+
 @router.post("", response_model=PlayerOut, dependencies=[Depends(require_beheer)])
 def create_player(payload: PlayerCreate, db: Session = Depends(get_db)):
     player = Player(**payload.model_dump())
     db.add(player)
+    db.flush()
+    _backfill_availability(db, player.id)
     db.commit()
     db.refresh(player)
     return player
@@ -74,12 +83,15 @@ def create_player_with_account(payload: UserCreate, db: Session = Depends(get_db
         hashed_password=hash_password(password),
         rol=payload.rol,
         actief=payload.actief,
+        password_changed_at=datetime.now(timezone.utc),
     )
     db.add(user)
     db.flush()
 
     player = Player(user_id=user.id, naam=payload.naam)
     db.add(player)
+    db.flush()
+    _backfill_availability(db, player.id)
     db.commit()
     db.refresh(user)
 
@@ -124,6 +136,7 @@ def update_player(player_id: int, payload: UserUpdate, db: Session = Depends(get
 
     if payload.password:
         user.hashed_password = hash_password(payload.password)
+        user.password_changed_at = datetime.now(timezone.utc)
 
     db.commit()
     db.refresh(user)
@@ -140,22 +153,14 @@ def update_player(player_id: int, payload: UserUpdate, db: Session = Depends(get
 
 @router.delete("/{player_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_beheer)])
 def delete_player(player_id: int, db: Session = Depends(get_db)):
-    """Verwijdert een speler en het bijbehorende account. Beschikbaarheid en
-    opstelling-vermeldingen van deze speler worden meeverwijderd; wijzigingslog-
-    regels blijven staan maar verliezen de koppeling naar het account."""
+    """Zet een speler op inactief in plaats van 'm echt te verwijderen: een
+    hard delete trekt ook alle beschikbaarheid- en opstelling-geschiedenis
+    (dus statistieken) van die speler mee weg. Inactief verdwijnt de speler
+    uit de naam-kiezer en kan niet meer inloggen, maar de geschiedenis
+    blijft gewoon staan — via Beheer > Spelers weer op actief te zetten."""
     player = db.query(Player).filter(Player.id == player_id).first()
-    if not player:
+    if not player or not player.user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speler niet gevonden")
 
-    db.query(LineupPlayer).filter(LineupPlayer.player_id == player.id).delete()
-    db.query(Availability).filter(Availability.player_id == player.id).delete()
-
-    user = player.user
-    if user:
-        db.query(Notification).filter(Notification.user_id == user.id).delete()
-        db.query(AuditLog).filter(AuditLog.user_id == user.id).update({"user_id": None})
-
-    db.delete(player)
-    if user:
-        db.delete(user)
+    player.user.actief = False
     db.commit()

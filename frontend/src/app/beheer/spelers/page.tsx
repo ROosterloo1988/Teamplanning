@@ -37,7 +37,6 @@ export default function BeheerSpelersPage() {
   const [editingOriginalRol, setEditingOriginalRol] = useState<UserRole>("SPELER");
   const [editError, setEditError] = useState<string | null>(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   async function load() {
     const playersData = await api.get<UserOut[]>("/players/with-accounts");
@@ -114,21 +113,6 @@ export default function BeheerSpelersPage() {
       setEditError(err instanceof ApiError ? err.message : "Opslaan mislukt");
     } finally {
       setEditSubmitting(false);
-    }
-  }
-
-  async function handleDelete(player: UserOut) {
-    if (!window.confirm(`Weet je zeker dat je ${player.naam} wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
-      return;
-    }
-    setDeletingId(player.player_id);
-    try {
-      await api.delete(`/players/${player.player_id}`);
-      await load();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Verwijderen mislukt");
-    } finally {
-      setDeletingId(null);
     }
   }
 
@@ -228,13 +212,6 @@ export default function BeheerSpelersPage() {
               <div className="flex gap-3 text-xs">
                 <button onClick={() => startEdit(p)} className="text-brand hover:underline">
                   Bewerken
-                </button>
-                <button
-                  onClick={() => handleDelete(p)}
-                  disabled={deletingId === p.player_id}
-                  className="text-red-600 hover:underline disabled:opacity-50"
-                >
-                  {deletingId === p.player_id ? "Bezig..." : "Verwijderen"}
                 </button>
               </div>
             </li>
