@@ -77,6 +77,14 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
   seizoen is worden meteen opgeruimd.
 - **PWA**: de app heeft een manifest en iconen zodat spelers hem op hun
   telefoon kunnen "installeren" (add to home screen).
+- **Pushmeldingen**: naast het in-app notificatiecentrum kan een speler op
+  **Meldingen** pushmeldingen aanzetten voor dit toestel (Web Push, geen
+  account bij een derde partij nodig). Je krijgt dan ook een melding buiten
+  de app om bij een nieuwe wedstrijd, een gepubliceerde opstelling, en —
+  nieuw — als je nog niet gereageerd hebt op een wedstrijd die binnen
+  `REMINDER_DAYS_BEFORE` dagen valt (standaard 3; een nachtelijke taak stuurt
+  deze herinnering precies één keer per wedstrijd). Zie "Pushmeldingen
+  instellen" hieronder om dit op de server aan te zetten.
 
 **Teambeheer-synchronisatie** (ontwerp secties 6 en 7):
 
@@ -237,18 +245,45 @@ Teambeheer-pagina (`backend/tests/fixtures/`) — zie `backend/tests/`
 (`pytest`) en de frontendbuild (`npm run build`) — vangt de meeste
 regressies af voordat ze op de server terechtkomen.
 
+## Pushmeldingen instellen
+
+Web Push werkt met een VAPID-sleutelpaar dat de server ondertekent en de
+browser vertrouwt — geen Firebase/APNs-account nodig. Zonder sleutels staat
+push gewoon uit (de rest van de app werkt door); zo zet je 'm aan:
+
+```bash
+# eenmalig, buiten de container om een sleutelpaar genereren
+python -m venv /tmp/vapid-venv && /tmp/vapid-venv/bin/pip install pywebpush
+/tmp/vapid-venv/bin/python -c "
+from py_vapid import Vapid
+import base64
+v = Vapid(); v.generate_keys()
+priv = v.private_key.private_numbers().private_value.to_bytes(32, 'big')
+pub = v.public_key.public_numbers()
+pub_bytes = b'\x04' + pub.x.to_bytes(32, 'big') + pub.y.to_bytes(32, 'big')
+print('VAPID_PRIVATE_KEY=' + base64.urlsafe_b64encode(priv).decode().rstrip('='))
+print('VAPID_PUBLIC_KEY=' + base64.urlsafe_b64encode(pub_bytes).decode().rstrip('='))
+"
+```
+
+Zet de twee gegenereerde regels plus `VAPID_CLAIMS_EMAIL` (een geldig
+`mailto:`-adres, alleen gebruikt als contactgegevens richting pushdiensten
+zoals FCM) in `.env` en herstart de backend. Spelers zetten pushmeldingen
+daarna zelf aan via **Meldingen** — de browser vraagt eenmalig toestemming.
+
 ## Databaseschema
 
 Zie `backend/app/models/` en de Alembic-migraties
 (`backend/alembic/versions/`) voor het schema: `users`, `players`,
 `seasons` (met `actief`-vlag), `competitions`, `matches`, `availability`,
 `lineups`, `lineup_players`, `audit_log` (wijzigingsgeschiedenis, ontwerp
-sectie 10), `notifications` (in-app notificatiecentrum, fase 3) en
+sectie 10), `notifications` (in-app notificatiecentrum, fase 3),
+`push_subscriptions` (Web Push-abonnementen per toestel) en
 `teambeheer_configs` (Teambeheer-koppeling per seizoen).
 
 ## Nog niet gebouwd
 
-- Herinneringen en notificaties via e-mail of push (alleen in-app)
+- Herinneringen en notificaties via e-mail (alleen in-app + push)
 
 ## Niet meer in scope
 

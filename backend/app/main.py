@@ -14,6 +14,7 @@ from app.api.routes import (
     matches,
     notifications,
     players,
+    push,
     seasons,
     stats,
     teambeheer,
@@ -57,6 +58,7 @@ app.include_router(admin.router, prefix=settings.API_V1_PREFIX)
 app.include_router(audit.router, prefix=settings.API_V1_PREFIX)
 app.include_router(stats.router, prefix=settings.API_V1_PREFIX)
 app.include_router(notifications.router, prefix=settings.API_V1_PREFIX)
+app.include_router(push.router, prefix=settings.API_V1_PREFIX)
 app.include_router(teambeheer.router, prefix=settings.API_V1_PREFIX)
 
 
