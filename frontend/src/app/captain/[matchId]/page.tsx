@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
@@ -22,7 +22,12 @@ export default function CaptainMatchDetailPage() {
   const [history, setHistory] = useState<AuditLogOut[]>([]);
   const [fetching, setFetching] = useState(true);
   const [publishing, setPublishing] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
+
+  const savedPlayerIds = useMemo(() => new Set(lineup?.player_ids ?? []), [lineup]);
+  const dirty =
+    selected.size !== savedPlayerIds.size || [...selected].some((id) => !savedPlayerIds.has(id));
 
   const load = useCallback(async () => {
     setFetching(true);
@@ -67,18 +72,31 @@ export default function CaptainMatchDetailPage() {
     setHistory(h);
   }
 
-  async function saveLineup() {
+  async function persistLineup(): Promise<LineupOut> {
     const updated = await api.put<LineupOut>(`/lineups/match/${matchId}`, {
       player_ids: Array.from(selected),
     });
     setLineup(updated);
     await refreshHistory();
+    return updated;
+  }
+
+  async function saveLineup() {
+    setSaveState("saving");
+    try {
+      await persistLineup();
+      setSaveState("saved");
+      setTimeout(() => setSaveState("idle"), 2000);
+    } catch (err) {
+      setSaveState("idle");
+      throw err;
+    }
   }
 
   async function publish() {
     setPublishing(true);
     try {
-      await saveLineup();
+      await persistLineup();
       const published = await api.post<LineupOut>(`/lineups/match/${matchId}/publish`);
       setLineup(published);
       await refreshHistory();
@@ -220,9 +238,16 @@ export default function CaptainMatchDetailPage() {
       <div className="flex gap-3">
         <button
           onClick={saveLineup}
-          className="flex-1 rounded-lg border border-gray-300 py-2 font-medium text-gray-700 hover:bg-gray-50"
+          disabled={saveState === "saving" || (!dirty && saveState === "idle")}
+          className={`flex-1 rounded-lg border py-2 font-medium disabled:opacity-50 ${
+            saveState === "saved"
+              ? "border-green-600 bg-green-50 text-green-700"
+              : dirty
+                ? "border-green-600 bg-green-600 text-white hover:bg-green-700"
+                : "border-gray-300 text-gray-700 hover:bg-gray-50"
+          }`}
         >
-          Opslaan
+          {saveState === "saving" ? "Opslaan..." : saveState === "saved" ? "✅ Opgeslagen" : "Opslaan"}
         </button>
         <button
           onClick={publish}
