@@ -51,7 +51,10 @@ services:
     depends_on:
       - backend
     ports:
-      - "3000:3000"
+      # Alleen de host-kant is instelbaar (FRONTEND_PORT) — handig als er
+      # ooit een tweede, onafhankelijke team-instantie op dezelfde machine
+      # komt te draaien (zie docs/deployment-ubuntu-26.04.md, "Tweede team").
+      - "${FRONTEND_PORT:-3000}:3000"
 
 volumes:
   db_data:

@@ -152,7 +152,33 @@ server {
 }
 ```
 
-## 7. Updaten
+## 7. Tweede team (aparte instantie)
+
+Deze app is bewust single-team (zie README, "Niet meer in scope"). Wil je
+'m voor een tweede team gebruiken, dan draai je gewoon een volledig
+gescheiden tweede instantie — geen multi-tenant-code nodig, elke instantie
+heeft z'n eigen database, teamwachtwoord en spelerslijst.
+
+**Op een eigen server** (aanbevolen): herhaal simpelweg stap 1 t/m 6 op die
+machine. Niets hoeft aangepast te worden, elke server heeft toch al zijn
+eigen poort 3000.
+
+**Op dezelfde server** kan ook, met twee dingen extra:
+
+- Clone naar een andere map, bv. `/opt/teamplanning-teamb` (stap 4) — Docker
+  Compose leidt de container-, netwerk- en volumenamen af van de mapnaam, dus
+  dat voorkomt vanzelf botsingen met de eerste instantie.
+- Zet in die tweede `.env` een andere `FRONTEND_PORT` (bv. `3001`) — anders
+  proberen beide instanties op hetzelfde hostpoort 3000 te luisteren en start
+  de tweede niet op. De backend-poort (8000, intern) hoeft nooit aangepast te
+  worden: die wordt sowieso nooit gepubliceerd.
+
+Op de offloader (stap 6) komt er dan gewoon een tweede `server {}`-blok bij,
+met een ander `server_name` (het subdomein van team twee) en een
+`proxy_pass` naar dezelfde server-IP maar het nieuwe poortnummer (of naar
+een andere server-IP, bij de eerste optie hierboven).
+
+## 8. Updaten
 
 ```bash
 cd /opt/teamplanning
@@ -163,7 +189,7 @@ docker compose up -d --build
 Nieuwe Alembic-migraties draaien automatisch mee bij het opnieuw starten van
 de backend-container.
 
-## 8. Backups
+## 9. Backups
 
 Een dagelijkse database-dump volstaat (zie functioneel ontwerp sectie 14:
 dagelijkse backups, 30 dagen historie). Voorbeeld-cronjob:
@@ -179,7 +205,7 @@ find /opt/teamplanning-backups -mtime +30 -delete
 
 (maak `/opt/teamplanning-backups` eenmalig aan met `mkdir -p`.)
 
-## 9. Logs bekijken
+## 10. Logs bekijken
 
 ```bash
 docker compose logs -f backend
