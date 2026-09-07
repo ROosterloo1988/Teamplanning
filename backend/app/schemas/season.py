@@ -20,3 +20,7 @@ class SeasonOut(SeasonBase):
 
     id: int
     actief: bool
+    # Doorlink naar de Teambeheer-standenpagina voor dit seizoen (zelfde
+    # opzet als uitslag_url naar het wedstrijdformulier) — None als er nog
+    # geen Teambeheer-koppeling is ingesteld.
+    stand_url: str | None = None

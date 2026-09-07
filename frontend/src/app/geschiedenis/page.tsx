@@ -82,7 +82,22 @@ export default function GeschiedenisPage() {
           ))}
         </select>
       </div>
-      <p className="mb-6 text-gray-500">Afgelopen wedstrijden met de gepubliceerde opstelling.</p>
+      <p className="mb-2 text-gray-500">Afgelopen wedstrijden met de gepubliceerde opstelling.</p>
+      {(() => {
+        const filteredSeason = seasons.find((s) => String(s.id) === seasonFilter);
+        return filteredSeason?.stand_url ? (
+          <a
+            href={filteredSeason.stand_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mb-6 inline-block text-sm text-brand hover:underline"
+          >
+            📊 Bekijk de competitiestand en alle uitslagen ↗
+          </a>
+        ) : (
+          <div className="mb-6" />
+        );
+      })()}
 
       <ul className="divide-y divide-gray-200 rounded-xl border border-gray-200 bg-white">
         {matches.map((match) => {
