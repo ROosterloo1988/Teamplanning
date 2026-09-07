@@ -207,10 +207,16 @@ Ga naar **Beheer → Teambeheer**, kies het seizoen en vul in:
 Voorbeeld voor seizoen 2026-2027, bond 11, poule 1A:
 `https://feeds.teambeheer.nl/web/jaarprogramma?d=11&s=26-27&div=1A` — dus
 **Bond** `11`, **Poule** `1A`, en het seizoen (`s=26-27`) wordt automatisch
-afgeleid van het gekozen seizoen in de app. Voor een volgend seizoen hoef je
-dus alleen een nieuw seizoen (bv. startjaar 2027) aan te maken en aan
-dezelfde koppeling te hangen — bond en poule blijven meestal gelijk, alleen
-`s=` schuift automatisch mee.
+afgeleid van het gekozen seizoen in de app.
+
+De koppeling (bond/poule/teamnummer) wordt per seizoen apart opgeslagen, niet
+gedeeld tussen seizoenen. Voor een volgend seizoen maak je een nieuw seizoen
+aan (bv. startjaar 2027) en vul je daar de koppeling opnieuw in — meestal
+met dezelfde bond en poule, maar dat hoeft niet: promoveer of degradeer je,
+dan vul je gewoon de nieuwe poule in bij dat nieuwe seizoen. De koppeling
+(en dus ook `s=`) van eerdere seizoenen blijft ongewijzigd staan, ook als
+die daarna nooit meer wordt aangepast — de geschiedenis van een seizoen in
+een andere poule blijft dus altijd kloppen.
 
 De app haalt daarmee `https://feeds.teambeheer.nl/web/jaarprogramma?d=<bond>&s=<seizoen>&div=<poule>`
 op — een HTML-pagina, geen API — en parst per speelweek de tabel met datum,
