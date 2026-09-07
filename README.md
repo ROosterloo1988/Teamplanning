@@ -4,7 +4,9 @@ Webapp die de Excel-planning voor beschikbaarheid en opstelling vervangt door
 een centrale database met een spelerscherm, captain-scherm en beheerscherm.
 Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
 
-**Fase 1 MVP** (ontwerp sectie 16):
+## Functionaliteit
+
+**Beschikbaarheid & opstelling**:
 
 - Spelers loggen in, zien hun eerstvolgende wedstrijd en geven beschikbaarheid
   door (Ja / Nee / Indien nodig). Dat kan ook vooraf voor latere wedstrijden:
@@ -13,20 +15,53 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
 - Captains zien de beschikbaarheid per wedstrijd, stellen een opstelling samen
   en publiceren die naar de spelers. "Publiceren" verstuurt niets extern (geen
   e-mail): het zet de opstelling zichtbaar voor spelers in de app en maakt een
-  in-app melding. Voor de WhatsApp-groep staat er een aparte knop "📋 Kopieer
-  opstelling voor WhatsApp" die een kant-en-klaar tekstberichtje (wedstrijd,
-  datum, locatie, geselecteerde spelers) naar het klembord kopieert — inclusief
-  een Google Maps-link op de locatieregel, die WhatsApp automatisch als
-  aanklikbare navigatielink toont.
+  in-app melding (en, indien aangezet, een pushmelding — zie hieronder). Voor
+  de WhatsApp-groep staat er een aparte knop "📋 Kopieer opstelling voor
+  WhatsApp" die een kant-en-klaar tekstberichtje (wedstrijd, datum, locatie,
+  geselecteerde spelers) naar het klembord kopieert — inclusief een Google
+  Maps-link op de locatieregel, die WhatsApp automatisch als aanklikbare
+  navigatielink toont.
 - De opstelling is ook achteraf aan te passen — ook voor al gespeelde
   wedstrijden (via **Geschiedenis → Opstelling aanpassen**) en met iedereen
   selecteerbaar, ook wie eerder "kan niet" aangaf, voor een late wissel.
-  Statistieken (**Beheer → Statistieken**, "keer opgesteld") tellen live mee,
-  dus die blijven altijd kloppen met de laatst opgeslagen opstelling.
+  Statistieken ("keer opgesteld") tellen live mee, dus die blijven altijd
+  kloppen met de laatst opgeslagen opstelling; wijzig of leeg je een al
+  gepubliceerde opstelling, dan verdwijnt de "gepubliceerd"-status vanzelf
+  totdat je opnieuw publiceert.
 - Beschikbaarheid en opstelling staan bij de captain in één compacte tabel:
   per speler de status (kan / kan niet / indien nodig) en een ster (★) om
   die speler in de opstelling te zetten, in plaats van twee aparte lijsten
-  onder elkaar.
+  onder elkaar. De "Opslaan"-knop is groen zolang er onopgeslagen wijzigingen
+  zijn, en grijs (uitgeschakeld) zodra alles is opgeslagen.
+
+**Wijzigingslog & herinneringen**:
+
+- **Wijzigingslog**: elke wijziging in beschikbaarheid en opstelling wordt
+  gelogd (wie, wanneer, oude → nieuwe waarde). Zichtbaar via **Beheer →
+  Logboek** en als inklapbare "Geschiedenis" op de captain-wedstrijdpagina.
+- **Herinneringen**: spelers zien een banner als ze binnen 3 dagen voor de
+  wedstrijd nog niet gereageerd hebben (en krijgen, indien aangezet, ook een
+  pushmelding — zie hieronder); captains zien op hun wedstrijdenoverzicht
+  welke wedstrijden nog ontbrekende reacties hebben.
+
+**Statistieken & overzicht**:
+
+- **Statistieken** (beheer én captain) toont per speler het
+  reactiepercentage en de verdeling kan/kan niet/indien nodig/geen
+  antwoord/aantal keer opgesteld.
+- **Overzicht** (voor alle rollen): een alleen-lezen matrix van wedstrijd ×
+  speler met per cel een kleurenbolletje (🟢/🔴/🟡/⚪) plus een ⭐ als die
+  speler ook echt in de gepubliceerde opstelling staat — zo zie je in één
+  oogopslag het verschil tussen "kan" en "kan én staat opgesteld", handig
+  om onderling een ruil te regelen. Filterbaar per seizoen en standaard
+  alleen komende wedstrijden.
+- **Wedstrijdhistorie**: **Geschiedenis** (voor alle rollen) toont afgelopen
+  wedstrijden met de gepubliceerde opstelling, filterbaar per seizoen, plus
+  een doorlink naar de Teambeheer-competitiestand (zie "Teambeheer
+  synchroniseren" hieronder).
+
+**Beheer**:
+
 - **Beheer → Spelers** beheert spelers: aanmaken, naam/rol/e-mailadres
   bewerken, ontgrendelwachtwoord wijzigen en op inactief zetten. Een speler
   wordt nooit echt verwijderd — dat zou ook zijn beschikbaarheids- en
@@ -39,54 +74,35 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
   locatie, type, seizoen). Een locatie is meteen een tikbare Google
   Maps-link (op elk scherm waar de locatie getoond wordt) — vul bij voorkeur
   het volledige adres in, dan kun je er direct mee navigeren.
-
-**Fase 2** (ontwerp sectie 16):
-
-- **Wijzigingslog**: elke wijziging in beschikbaarheid en opstelling wordt
-  gelogd (wie, wanneer, oude → nieuwe waarde). Zichtbaar via **Beheer →
-  Logboek** en als inklapbare "Geschiedenis" op de captain-wedstrijdpagina.
-- **Herinneringen (in-app)**: spelers zien een banner als ze binnen 3 dagen
-  voor de wedstrijd nog niet gereageerd hebben; captains zien op hun
-  wedstrijdenoverzicht welke wedstrijden nog ontbrekende reacties hebben.
-- **Betere statistieken**: **Statistieken** toont per speler het
-  reactiepercentage en de verdeling kan/kan niet/indien nodig/geen
-  antwoord/aantal keer opgesteld — voor beheer én captain (captain ziet
-  hierbij geen beheer-only sub-navigatie).
-
-**Fase 3** (ontwerp sectie 16):
-
 - **Seizoenen**: **Beheer → Seizoenen** beheert seizoenen en wijst er één als
   actief aan; nieuwe wedstrijden krijgen automatisch het actieve seizoen.
   Wedstrijden, statistieken en de wedstrijdhistorie zijn filterbaar per
-  seizoen. Je geeft alleen het startjaar op (bv. `2026`) — het eindjaar is
-  altijd startjaar + 1 en wordt automatisch berekend, dat kan niet meer per
-  ongeluk fout ingevuld worden.
-- **Wedstrijdhistorie**: **Geschiedenis** (voor alle rollen) toont afgelopen
-  wedstrijden met de gepubliceerde opstelling, filterbaar per seizoen.
-- **Overzicht** (voor alle rollen): een alleen-lezen matrix van wedstrijd ×
-  speler met per cel een kleurenbolletje (🟢/🔴/🟡/⚪) plus een ⭐ als die
-  speler ook echt in de gepubliceerde opstelling staat — zo zie je in één
-  oogopslag het verschil tussen "kan" en "kan én staat opgesteld", handig
-  om onderling een ruil te regelen. Filterbaar per seizoen en standaard
-  alleen komende wedstrijden.
+  seizoen (standaard staat elke filter meteen op het actieve seizoen). Je
+  geeft alleen het startjaar op (bv. `2026`) — het eindjaar is altijd
+  startjaar + 1 en wordt automatisch berekend, dat kan niet meer per ongeluk
+  fout ingevuld worden. Seizoenen worden niet automatisch gedeactiveerd —
+  dat blijft bewust een handmatige stap via **Beheer → Seizoenen**.
+
+**Notificaties & pushmeldingen**:
+
 - **In-app notificatiecentrum**: een bel-icoon met ongelezen-badge in de
   navigatie en een **Meldingen**-pagina. Spelers met een account krijgen een
   melding bij een nieuwe wedstrijd en bij een gepubliceerde opstelling. Een
   nachtelijke opruimtaak houdt de tabel klein: gelezen meldingen verdwijnen
   na 30 dagen, en meldingen van een seizoen dat niet meer het actieve
   seizoen is worden meteen opgeruimd.
-- **PWA**: de app heeft een manifest en iconen zodat spelers hem op hun
-  telefoon kunnen "installeren" (add to home screen).
 - **Pushmeldingen**: naast het in-app notificatiecentrum kan een speler op
   **Meldingen** pushmeldingen aanzetten voor dit toestel (Web Push, geen
   account bij een derde partij nodig). Je krijgt dan ook een melding buiten
-  de app om bij een nieuwe wedstrijd, een gepubliceerde opstelling, en —
-  nieuw — als je nog niet gereageerd hebt op een wedstrijd die binnen
-  `REMINDER_DAYS_BEFORE` dagen valt (standaard 3; een nachtelijke taak stuurt
-  deze herinnering precies één keer per wedstrijd). Zie "Pushmeldingen
-  instellen" hieronder om dit op de server aan te zetten.
+  de app om bij een nieuwe wedstrijd, een gepubliceerde opstelling, en als je
+  nog niet gereageerd hebt op een wedstrijd die binnen `REMINDER_DAYS_BEFORE`
+  dagen valt (standaard 3; een nachtelijke taak stuurt deze herinnering
+  precies één keer per wedstrijd). Zie "Pushmeldingen instellen" hieronder om
+  dit op de server aan te zetten.
+- **PWA**: de app heeft een manifest en iconen zodat spelers hem op hun
+  telefoon kunnen "installeren" (add to home screen).
 
-**Teambeheer-synchronisatie** (ontwerp secties 6 en 7):
+**Teambeheer-synchronisatie**:
 
 - **Beheer → Teambeheer** koppelt een seizoen aan de Teambeheer SDC
   jaarprogramma-feed (bond, poule, teamnummer), met een "Wedstrijden
@@ -191,10 +207,16 @@ Ga naar **Beheer → Teambeheer**, kies het seizoen en vul in:
 Voorbeeld voor seizoen 2026-2027, bond 11, poule 1A:
 `https://feeds.teambeheer.nl/web/jaarprogramma?d=11&s=26-27&div=1A` — dus
 **Bond** `11`, **Poule** `1A`, en het seizoen (`s=26-27`) wordt automatisch
-afgeleid van het gekozen seizoen in de app. Voor een volgend seizoen hoef je
-dus alleen een nieuw seizoen (bv. startjaar 2027) aan te maken en aan
-dezelfde koppeling te hangen — bond en poule blijven meestal gelijk, alleen
-`s=` schuift automatisch mee.
+afgeleid van het gekozen seizoen in de app.
+
+De koppeling (bond/poule/teamnummer) wordt per seizoen apart opgeslagen, niet
+gedeeld tussen seizoenen. Voor een volgend seizoen maak je een nieuw seizoen
+aan (bv. startjaar 2027) en vul je daar de koppeling opnieuw in — meestal
+met dezelfde bond en poule, maar dat hoeft niet: promoveer of degradeer je,
+dan vul je gewoon de nieuwe poule in bij dat nieuwe seizoen. De koppeling
+(en dus ook `s=`) van eerdere seizoenen blijft ongewijzigd staan, ook als
+die daarna nooit meer wordt aangepast — de geschiedenis van een seizoen in
+een andere poule blijft dus altijd kloppen.
 
 De app haalt daarmee `https://feeds.teambeheer.nl/web/jaarprogramma?d=<bond>&s=<seizoen>&div=<poule>`
 op — een HTML-pagina, geen API — en parst per speelweek de tabel met datum,
@@ -286,13 +308,9 @@ Zie `backend/app/models/` en de Alembic-migraties
 (`backend/alembic/versions/`) voor het schema: `users`, `players`,
 `seasons` (met `actief`-vlag), `competitions`, `matches`, `availability`,
 `lineups`, `lineup_players`, `audit_log` (wijzigingsgeschiedenis, ontwerp
-sectie 10), `notifications` (in-app notificatiecentrum, fase 3),
+sectie 10), `notifications` (in-app notificatiecentrum),
 `push_subscriptions` (Web Push-abonnementen per toestel) en
 `teambeheer_configs` (Teambeheer-koppeling per seizoen).
-
-## Nog niet gebouwd
-
-- Herinneringen en notificaties via e-mail (alleen in-app + push)
 
 ## Niet meer in scope
 
