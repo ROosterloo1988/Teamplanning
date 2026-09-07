@@ -109,6 +109,7 @@ export interface SeasonOut {
   startjaar: number;
   eindjaar: number;
   actief: boolean;
+  stand_url: string | null;
 }
 
 export interface NotificationOut {

@@ -213,6 +213,15 @@ corrigeren, mocht dat nodig zijn). Is de uitslag op de feed een link naar het
 officiële wedstrijdformulier, dan is de uitslag in de app ook meteen
 doorklikbaar naar die pagina.
 
+Op **Geschiedenis** staat, voor elk seizoen met een Teambeheer-koppeling, ook
+een doorlink "📊 Bekijk de competitiestand en alle uitslagen" naar
+`https://feeds.teambeheer.nl/web/stand/?d=<bond>&div=<poule>&s=<seizoen>` —
+dezelfde bond/poule/seizoen-parameters als hierboven, geen aparte
+configuratie nodig. Net als bij het wedstrijdformulier wordt die pagina niet
+overgenomen of geparst, alleen doorgelinkt: de stand en de uitslagen van de
+hele poule (niet alleen onze eigen wedstrijden) staan altijd bij Teambeheer
+zelf, niet in onze database.
+
 Daarbij haalt de app ook `/web/teams` (team → speelgelegenheid) en
 `/web/speelgelegenheden` (speelgelegenheid → naam + adres) op om de locatie
 van elke wedstrijd automatisch te vullen met naam én adres van de
