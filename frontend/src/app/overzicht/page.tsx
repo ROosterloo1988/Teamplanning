@@ -23,60 +23,20 @@ export default function OverzichtPage() {
   const [seasonFilter, setSeasonFilter] = useState("");
   const [upcomingOnly, setUpcomingOnly] = useState(true);
   const [fetching, setFetching] = useState(true);
-  const [landscapeLocked, setLandscapeLocked] = useState(false);
-  const [showLandscapeToggle, setShowLandscapeToggle] = useState(false);
-  const [landscapeError, setLandscapeError] = useState<string | null>(null);
+  const [showLandscapeHint, setShowLandscapeHint] = useState(false);
 
-  // "Liggend weergeven" is alleen zinvol op een smal (telefoon/kleine
-  // tablet) scherm — op desktop is er toch al genoeg breedte.
+  // Alleen relevant op een smal scherm dat nu echt rechtop staat — op
+  // desktop is er toch al genoeg breedte, en zodra je 'm draait naar
+  // landschap verdwijnt de tip vanzelf (Fullscreen/Orientation-lock bleek in
+  // de praktijk niet betrouwbaar terug te draaien en lekte naar andere
+  // pagina's, dus geen geforceerde rotatie meer — alleen een tip).
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 768px)");
-    setShowLandscapeToggle(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setShowLandscapeToggle(e.matches);
+    const mq = window.matchMedia("(max-width: 768px) and (orientation: portrait)");
+    setShowLandscapeHint(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setShowLandscapeHint(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
-
-  // Verlaat de gebruiker fullscreen op een andere manier dan onze eigen
-  // knop (terugknop, systeem-gebaar), dan moet de knoptekst dat volgen —
-  // anders staat er "Normaal weergeven" terwijl je alweer terug bent.
-  useEffect(() => {
-    function handleFullscreenChange() {
-      if (!document.fullscreenElement) setLandscapeLocked(false);
-    }
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, []);
-
-  async function toggleLandscape() {
-    setLandscapeError(null);
-    const orientation = screen.orientation as ScreenOrientation & {
-      lock?: (o: string) => Promise<void>;
-    };
-    if (!landscapeLocked) {
-      try {
-        if (document.documentElement.requestFullscreen) {
-          await document.documentElement.requestFullscreen();
-        }
-        if (!orientation?.lock) throw new Error("orientation lock niet ondersteund");
-        await orientation.lock("landscape");
-        setLandscapeLocked(true);
-      } catch {
-        setLandscapeError(
-          "Liggend vastzetten wordt niet ondersteund op dit toestel/deze browser — draai je toestel handmatig, de tabel past zich al automatisch aan."
-        );
-        if (document.fullscreenElement) {
-          await document.exitFullscreen().catch(() => {});
-        }
-      }
-    } else {
-      orientation?.unlock?.();
-      if (document.fullscreenElement) {
-        await document.exitFullscreen().catch(() => {});
-      }
-      setLandscapeLocked(false);
-    }
-  }
 
   const load = useCallback(async (seasonId: string, upcoming: boolean) => {
     const params = new URLSearchParams();
@@ -142,18 +102,12 @@ export default function OverzichtPage() {
   const body = (
     <>
       <Nav />
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">Overzicht</h1>
-        {showLandscapeToggle && (
-          <button
-            onClick={toggleLandscape}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            {landscapeLocked ? "📱 Normaal weergeven" : "📱⟳ Liggend weergeven"}
-          </button>
-        )}
-      </div>
-      {landscapeError && <p className="mb-2 text-sm text-red-600">{landscapeError}</p>}
+      <h1 className="mb-2 text-2xl font-bold">Overzicht</h1>
+      {showLandscapeHint && (
+        <p className="mb-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-800">
+          💡 Draai je toestel liggend voor het beste overzicht van alle spelers.
+        </p>
+      )}
       <p className="mb-4 text-gray-500">
         Wie kan wanneer wel of niet — handig om samen een ruil te regelen. Alleen-lezen: wijzigen doe
         je nog steeds bij jezelf op je eigen scherm.

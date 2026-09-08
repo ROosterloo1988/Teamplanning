@@ -33,6 +33,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refresh();
+    // Zelfherstel voor een eerdere bug op Overzicht (fullscreen +
+    // orientation-lock die niet altijd terugdraaide en naar andere
+    // pagina's lekte): als een toestel daar nog in vaststaat, hier meteen
+    // weer uitzetten — onschadelijk no-op als er niets vastzit.
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    try {
+      const orientation = screen.orientation as ScreenOrientation & { unlock?: () => void };
+      orientation?.unlock?.();
+    } catch {
+      // negeren: alleen relevant als er iets vastzat van de oude bug
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
