@@ -86,84 +86,91 @@ export default function OverzichtPage() {
   const byMatchAndPlayer = new Map(availability.map((a) => [`${a.match_id}-${a.player_id}`, a]));
 
   return (
-    <div>
-      <Nav />
-      <h1 className="mb-2 text-2xl font-bold">Overzicht</h1>
-      <p className="mb-4 text-gray-500">
-        Wie kan wanneer wel of niet — handig om samen een ruil te regelen. Alleen-lezen: wijzigen doe
-        je nog steeds bij jezelf op je eigen scherm.
-      </p>
+    // Doorbreekt bewust de max-w-2xl van het layout-frame: dit is de enige
+    // pagina met een brede tabel (wedstrijd × elke speler), en op een
+    // liggend scherm (tablet/telefoon) blijft die anders onnodig smal
+    // terwijl er zichtbaar ruimte over is — zie ook overflow-x-auto
+    // hieronder als vangnet voor als het echt niet past.
+    <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen px-4 sm:px-6">
+      <div className="mx-auto max-w-screen-2xl">
+        <Nav />
+        <h1 className="mb-2 text-2xl font-bold">Overzicht</h1>
+        <p className="mb-4 text-gray-500">
+          Wie kan wanneer wel of niet — handig om samen een ruil te regelen. Alleen-lezen: wijzigen doe
+          je nog steeds bij jezelf op je eigen scherm.
+        </p>
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <select
-          value={seasonFilter}
-          onChange={(e) => handleSeasonChange(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
-        >
-          <option value="">Alle seizoenen</option>
-          {seasons.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.naam}
-            </option>
-          ))}
-        </select>
-        <label className="flex items-center gap-1.5 text-sm text-gray-600">
-          <input
-            type="checkbox"
-            checked={upcomingOnly}
-            onChange={(e) => handleUpcomingToggle(e.target.checked)}
-          />
-          Alleen komende wedstrijden
-        </label>
-      </div>
-
-      <p className="mb-3 text-xs text-gray-500">
-        🟢 Kan &nbsp;·&nbsp; 🔴 Kan niet &nbsp;·&nbsp; 🟡 Indien nodig &nbsp;·&nbsp; ⚪ Geen antwoord
-        &nbsp;·&nbsp; ⭐ Opgesteld
-      </p>
-
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-        <table className="text-sm">
-          <thead className="bg-gray-50 text-gray-500">
-            <tr>
-              <th className="sticky left-0 z-10 bg-gray-50 px-3 py-2 text-left font-medium">
-                Wedstrijd
-              </th>
-              {players.map((p) => (
-                <th key={p.id} className="px-2 py-2 text-center font-medium" title={p.naam}>
-                  {p.naam.split(" ")[0]}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {matches.map((match) => (
-              <tr key={match.id}>
-                <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-3 py-2">
-                  <span className="text-gray-500">{formatMatchDateShort(match.datum)}</span>{" "}
-                  {match.thuisteam} - {match.uitteam}
-                </td>
-                {players.map((p) => {
-                  const a = byMatchAndPlayer.get(`${match.id}-${p.id}`);
-                  const opgesteld = lineups.get(match.id)?.has(p.id) ?? false;
-                  return (
-                    <td key={p.id} className="whitespace-nowrap px-2 py-2 text-center">
-                      <StatusDot status={a?.status ?? "NO_RESPONSE"} />
-                      {opgesteld && <span title="Opgesteld">⭐</span>}
-                    </td>
-                  );
-                })}
-              </tr>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <select
+            value={seasonFilter}
+            onChange={(e) => handleSeasonChange(e.target.value)}
+            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Alle seizoenen</option>
+            {seasons.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.naam}
+              </option>
             ))}
-            {matches.length === 0 && (
+          </select>
+          <label className="flex items-center gap-1.5 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={upcomingOnly}
+              onChange={(e) => handleUpcomingToggle(e.target.checked)}
+            />
+            Alleen komende wedstrijden
+          </label>
+        </div>
+
+        <p className="mb-3 text-xs text-gray-500">
+          🟢 Kan &nbsp;·&nbsp; 🔴 Kan niet &nbsp;·&nbsp; 🟡 Indien nodig &nbsp;·&nbsp; ⚪ Geen antwoord
+          &nbsp;·&nbsp; ⭐ Opgesteld
+        </p>
+
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-gray-500">
               <tr>
-                <td colSpan={players.length + 1} className="px-3 py-6 text-center text-gray-400">
-                  Geen wedstrijden gevonden
-                </td>
+                <th className="sticky left-0 z-10 bg-gray-50 px-3 py-2 text-left font-medium">
+                  Wedstrijd
+                </th>
+                {players.map((p) => (
+                  <th key={p.id} className="px-2 py-2 text-center font-medium" title={p.naam}>
+                    {p.naam.split(" ")[0]}
+                  </th>
+                ))}
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {matches.map((match) => (
+                <tr key={match.id}>
+                  <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-3 py-2">
+                    <span className="text-gray-500">{formatMatchDateShort(match.datum)}</span>{" "}
+                    {match.thuisteam} - {match.uitteam}
+                  </td>
+                  {players.map((p) => {
+                    const a = byMatchAndPlayer.get(`${match.id}-${p.id}`);
+                    const opgesteld = lineups.get(match.id)?.has(p.id) ?? false;
+                    return (
+                      <td key={p.id} className="whitespace-nowrap px-2 py-2 text-center">
+                        <StatusDot status={a?.status ?? "NO_RESPONSE"} />
+                        {opgesteld && <span title="Opgesteld">⭐</span>}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+              {matches.length === 0 && (
+                <tr>
+                  <td colSpan={players.length + 1} className="px-3 py-6 text-center text-gray-400">
+                    Geen wedstrijden gevonden
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
