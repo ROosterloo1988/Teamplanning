@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
@@ -22,12 +22,15 @@ export default function CaptainMatchDetailPage() {
   const [history, setHistory] = useState<AuditLogOut[]>([]);
   const [fetching, setFetching] = useState(true);
   const [publishing, setPublishing] = useState(false);
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const savedPlayerIds = useMemo(() => new Set(lineup?.player_ids ?? []), [lineup]);
-  const dirty =
-    selected.size !== savedPlayerIds.size || [...selected].some((id) => !savedPlayerIds.has(id));
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
 
   const load = useCallback(async () => {
     setFetching(true);
@@ -63,6 +66,7 @@ export default function CaptainMatchDetailPage() {
       const next = new Set(prev);
       if (next.has(playerId)) next.delete(playerId);
       else next.add(playerId);
+      scheduleAutoSave(next);
       return next;
     });
   }
@@ -72,34 +76,42 @@ export default function CaptainMatchDetailPage() {
     setHistory(h);
   }
 
-  async function persistLineup(): Promise<LineupOut> {
+  async function persistLineup(playerIds: Set<number>): Promise<LineupOut> {
     const updated = await api.put<LineupOut>(`/lineups/match/${matchId}`, {
-      player_ids: Array.from(selected),
+      player_ids: Array.from(playerIds),
     });
     setLineup(updated);
     await refreshHistory();
     return updated;
   }
 
-  async function saveLineup() {
-    setSaveState("saving");
-    try {
-      await persistLineup();
-      setSaveState("saved");
-      setTimeout(() => setSaveState("idle"), 2000);
-    } catch (err) {
-      setSaveState("idle");
-      throw err;
-    }
+  // Elke ster-tik slaat na een korte stilte vanzelf op — de captain hoeft
+  // niet apart "Opslaan" te doen, alleen "Publiceren" als de opstelling
+  // klaar is voor de spelers. De debounce voorkomt een PUT per losse tik
+  // als er snel meerdere spelers achter elkaar aan/uit gezet worden.
+  function scheduleAutoSave(nextSelected: Set<number>) {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    setAutoSaveState("saving");
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await persistLineup(nextSelected);
+        setAutoSaveState("saved");
+        setTimeout(() => setAutoSaveState("idle"), 1500);
+      } catch {
+        setAutoSaveState("idle");
+      }
+    }, 600);
   }
 
   async function publish() {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     setPublishing(true);
     try {
-      await persistLineup();
+      await persistLineup(selected);
       const published = await api.post<LineupOut>(`/lineups/match/${matchId}/publish`);
       setLineup(published);
       await refreshHistory();
+      setAutoSaveState("idle");
     } finally {
       setPublishing(false);
     }
@@ -231,32 +243,23 @@ export default function CaptainMatchDetailPage() {
           })}
         </tbody>
       </table>
-      <p className="mb-6 text-sm text-gray-500">
-        {beschikbaarAantal} spelers beschikbaar · {selected.size} / 4 opgesteld
+      <p className="mb-2 flex items-center justify-between text-sm text-gray-500">
+        <span>
+          {beschikbaarAantal} spelers beschikbaar · {selected.size} / 4 opgesteld
+        </span>
+        <span className="text-xs text-gray-400">
+          {autoSaveState === "saving" && "Opslaan..."}
+          {autoSaveState === "saved" && "✅ Automatisch opgeslagen"}
+        </span>
       </p>
 
-      <div className="flex gap-3">
-        <button
-          onClick={saveLineup}
-          disabled={saveState === "saving" || (!dirty && saveState === "idle")}
-          className={`flex-1 rounded-lg border py-2 font-medium disabled:opacity-50 ${
-            saveState === "saved"
-              ? "border-green-600 bg-green-50 text-green-700"
-              : dirty
-                ? "border-green-600 bg-green-600 text-white hover:bg-green-700"
-                : "border-gray-300 text-gray-700 hover:bg-gray-50"
-          }`}
-        >
-          {saveState === "saving" ? "Opslaan..." : saveState === "saved" ? "✅ Opgeslagen" : "Opslaan"}
-        </button>
-        <button
-          onClick={publish}
-          disabled={publishing}
-          className="flex-1 rounded-lg bg-brand py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50"
-        >
-          {lineup?.published ? "Opnieuw publiceren" : "Opstelling publiceren"}
-        </button>
-      </div>
+      <button
+        onClick={publish}
+        disabled={publishing}
+        className="w-full rounded-lg bg-brand py-2 font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+      >
+        {publishing ? "Bezig..." : lineup?.published ? "Opnieuw publiceren" : "Opstelling publiceren"}
+      </button>
       {lineup?.published && (
         <p className="mt-3 text-sm text-green-700">✅ Opstelling is gepubliceerd naar spelers</p>
       )}
