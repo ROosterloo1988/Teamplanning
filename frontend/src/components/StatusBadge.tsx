@@ -46,6 +46,21 @@ export function formatMatchDateShort(datum: string): string {
   return date.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" });
 }
 
+// Een wedstrijd die eerder wel een datum had, kan door Teambeheer weer op
+// "n.n.b." gezet zijn (uitgesteld). De datum-kolom blijft dan op de laatst
+// bekende waarde staan (zie backend), dus overal waar een datum getoond
+// wordt, dit ernaast tonen zodat niemand op een verouderde datum afgaat.
+export function DatumOnbekendBadge() {
+  return (
+    <span
+      className="text-amber-600"
+      title="Teambeheer heeft deze wedstrijd uitgesteld; de nieuwe datum is nog niet bekend"
+    >
+      ⚠️ datum nog niet bekend
+    </span>
+  );
+}
+
 export function mapsUrl(locatie: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locatie)}`;
 }

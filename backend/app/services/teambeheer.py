@@ -347,8 +347,34 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
                 resolved_team_naam = fixture.uit_naam.strip()
 
         datum = resolve_year(fixture.datum_raw, season.startjaar, season.eindjaar)
+        thuisteam = fixture.thuis_naam.strip()
+        uitteam = fixture.uit_naam.strip()
+        external_id = _external_id(config, s_code, fixture)
+
         if datum is None:
-            skipped_no_date += 1
+            # Was deze wedstrijd eerder wel gepland en staat hij nu weer op
+            # "n.n.b." (uitgesteld, nieuwe datum nog onbekend)? Dan laten we
+            # de laatst bekende datum staan (die kolom is not-null) maar
+            # zetten 'm zichtbaar op "onbekend" en laten spelers dat weten —
+            # anders blijft de oude datum overal stilletjes als geldig ogen.
+            existing = db.query(Match).filter(Match.external_id == external_id).first()
+            if existing and not existing.datum_onbekend:
+                existing.datum_onbekend = True
+                notify_all_players(
+                    db,
+                    type_="match_changed",
+                    title=f"⚠️ Datum nog niet bekend: {thuisteam} - {uitteam}",
+                    body=(
+                        f"Was: {existing.datum.strftime('%d-%m-%Y')} — wedstrijd is uitgesteld, "
+                        "nieuwe datum nog niet bekend."
+                    ),
+                    match_id=existing.id,
+                )
+                updated += 1
+            elif not existing:
+                skipped_no_date += 1
+            else:
+                unchanged += 1
             continue
 
         thuisteam = fixture.thuis_naam.strip()
@@ -357,12 +383,14 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
         locatie = venue.label if venue and venue.label else None
         uitslag = fixture.score.strip() or None
         uitslag_url = fixture.score_url
-        external_id = _external_id(config, s_code, fixture)
 
         match = db.query(Match).filter(Match.external_id == external_id).first()
         if match:
             schedule_changed = (
-                match.datum != datum or match.thuisteam != thuisteam or match.uitteam != uitteam
+                match.datum != datum
+                or match.datum_onbekend
+                or match.thuisteam != thuisteam
+                or match.uitteam != uitteam
             )
             uitslag_changed = bool(uitslag) and (
                 match.uitslag != uitslag or match.uitslag_url != uitslag_url
@@ -370,14 +398,19 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
 
             if schedule_changed:
                 old_datum = match.datum
+                old_datum_onbekend = match.datum_onbekend
                 match.datum = datum
+                match.datum_onbekend = False
                 match.thuisteam = thuisteam
                 match.uitteam = uitteam
                 notify_all_players(
                     db,
                     type_="match_changed",
                     title=f"⚠️ Wedstrijd gewijzigd: {thuisteam} - {uitteam}",
-                    body=f"Was: {old_datum.strftime('%d-%m-%Y')} — nu: {datum.strftime('%d-%m-%Y')}",
+                    body=(
+                        f"Was: {'datum nog niet bekend' if old_datum_onbekend else old_datum.strftime('%d-%m-%Y')}"
+                        f" — nu: {datum.strftime('%d-%m-%Y')}"
+                    ),
                     match_id=match.id,
                 )
             if uitslag_changed:
