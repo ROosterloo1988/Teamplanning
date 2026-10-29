@@ -128,6 +128,7 @@ def update_player(player_id: int, payload: UserUpdate, db: Session = Depends(get
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Ontgrendelwachtwoord is verplicht bij het promoveren naar captain/beheer",
         )
+    rol_changed = payload.rol is not None and payload.rol != user.rol
     if payload.rol is not None:
         user.rol = payload.rol
 
@@ -136,6 +137,13 @@ def update_player(player_id: int, payload: UserUpdate, db: Session = Depends(get
 
     if payload.password:
         user.hashed_password = hash_password(payload.password)
+        user.password_changed_at = datetime.now(timezone.utc)
+    elif rol_changed:
+        # Rolwijziging moet ook bestaande sessies ongeldig maken — anders
+        # blijft een net gedegradeerde speler met zijn oude token (tot een
+        # jaar geldig) gewoon captain/beheer-functionaliteit gebruiken. Dit
+        # hergebruikt hetzelfde password_changed_at/pwd_ts-mechanisme als
+        # een wachtwoordwijziging, zie get_current_user.
         user.password_changed_at = datetime.now(timezone.utc)
 
     db.commit()
