@@ -65,6 +65,17 @@ export async function apiFetch<T>(
     } catch {
       // ignore
     }
+    if (res.status === 401 && tokenOverride === undefined) {
+      // Dit verzoek gebruikte het persoonlijke token (niet het teamtoken) —
+      // 401 betekent dat de sessie niet meer geldig is (wachtwoord of rol
+      // gewijzigd, account gedeactiveerd). Niet laten hangen met een kapotte
+      // pagina: token wissen en terug naar de naam-kiezer, net als bij
+      // uitloggen.
+      clearToken();
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+        window.location.href = "/login";
+      }
+    }
     throw new ApiError(res.status, detail);
   }
 
