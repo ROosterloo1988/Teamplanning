@@ -10,6 +10,7 @@ class MatchBase(BaseModel):
     type: MatchType = MatchType.COMPETITIE
     nummer: str | None = None
     datum: date
+    datum_onbekend: bool = False
     tijd: time | None = None
     thuisteam: str
     uitteam: str
@@ -28,6 +29,7 @@ class MatchUpdate(BaseModel):
     type: MatchType | None = None
     nummer: str | None = None
     datum: date | None = None
+    datum_onbekend: bool | None = None
     tijd: time | None = None
     thuisteam: str | None = None
     uitteam: str | None = None

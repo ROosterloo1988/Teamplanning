@@ -1,6 +1,6 @@
 from datetime import date, time
 
-from sqlalchemy import Date, Enum, ForeignKey, Integer, String, Time
+from sqlalchemy import Boolean, Date, Enum, ForeignKey, Integer, String, Time
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
@@ -16,6 +16,13 @@ class Match(Base):
     type: Mapped[MatchType] = mapped_column(Enum(MatchType), default=MatchType.COMPETITIE, nullable=False)
     nummer: Mapped[str | None] = mapped_column(String(20), nullable=True)
     datum: Mapped[date] = mapped_column(Date, nullable=False)
+    # Zodra Teambeheer een al geplande wedstrijd weer als "n.n.b." toont
+    # (uitgesteld, nieuwe datum nog onbekend), kan datum niet leeg: die kolom
+    # is bewust not-null (sortering/filtering op datum leunt daarop overal in
+    # de app). datum blijft dus op de laatst bekende waarde staan, maar dit
+    # vlag maakt dat zichtbaar in de UI zodat niemand op een verouderde datum
+    # afgaat. Wordt automatisch weer False zodra er een echte datum terugkomt.
+    datum_onbekend: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     tijd: Mapped[time | None] = mapped_column(Time, nullable=True)
     thuisteam: Mapped[str] = mapped_column(String(120), nullable=False)
     uitteam: Mapped[str] = mapped_column(String(120), nullable=False)

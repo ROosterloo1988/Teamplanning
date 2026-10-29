@@ -7,7 +7,7 @@ import { api, ApiError } from "@/lib/api";
 import { MatchOut, MatchType, SeasonOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
 import { BeheerNav } from "@/components/BeheerNav";
-import { formatMatchDate, LocatieLink } from "@/components/StatusBadge";
+import { DatumOnbekendBadge, formatMatchDate, LocatieLink } from "@/components/StatusBadge";
 
 const TYPE_LABELS: Record<MatchType, string> = {
   COMPETITIE: "Competitie",
@@ -274,6 +274,7 @@ export default function BeheerWedstrijdenPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 text-gray-500">
                   <span className="capitalize">{formatMatchDate(m.datum)}</span>
+                  {m.datum_onbekend && <DatumOnbekendBadge />}
                   <span>·</span>
                   <span>{TYPE_LABELS[m.type]}</span>
                   <span>·</span>

@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { AuditLogOut, AvailabilityWithPlayer, LineupOut, MatchOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
-import { formatMatchDate, LocatieLink, mapsUrl, StatusBadge } from "@/components/StatusBadge";
+import { DatumOnbekendBadge, formatMatchDate, LocatieLink, mapsUrl, StatusBadge } from "@/components/StatusBadge";
 import { AuditLogList } from "@/components/AuditLogList";
 
 export default function CaptainMatchDetailPage() {
@@ -193,6 +193,11 @@ export default function CaptainMatchDetailPage() {
     <div>
       <Nav />
       <h1 className="mb-1 text-xl font-bold capitalize">{formatMatchDate(match.datum)}</h1>
+      {match.datum_onbekend && (
+        <p className="mb-2 text-sm">
+          <DatumOnbekendBadge />
+        </p>
+      )}
       <p className="mb-6 text-gray-500">
         {match.thuisteam} – {match.uitteam}
         {match.locatie && (

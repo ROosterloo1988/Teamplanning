@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { MatchOut, MatchReminderOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
-import { formatMatchDate } from "@/components/StatusBadge";
+import { formatMatchDate, DatumOnbekendBadge } from "@/components/StatusBadge";
 
 export default function CaptainMatchesPage() {
   const { user, loading } = useAuth();
@@ -69,6 +69,11 @@ export default function CaptainMatchesPage() {
               className="flex flex-col gap-1 px-4 py-3 hover:bg-gray-50"
             >
               <span className="text-sm text-gray-500 capitalize">{formatMatchDate(match.datum)}</span>
+              {match.datum_onbekend && (
+                <span className="text-xs">
+                  <DatumOnbekendBadge />
+                </span>
+              )}
               <span className="font-medium">
                 {match.thuisteam} - {match.uitteam}
               </span>

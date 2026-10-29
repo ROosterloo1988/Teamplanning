@@ -8,6 +8,7 @@ import { AvailabilityOut, AvailabilityStatus, LineupOut, MatchOut } from "@/lib/
 import { Nav } from "@/components/Nav";
 import {
   daysUntil,
+  DatumOnbekendBadge,
   formatMatchDate,
   formatMatchDateShort,
   LocatieLink,
@@ -129,6 +130,11 @@ export default function SpelerPage() {
             Eerstvolgende wedstrijd
           </h2>
           <p className="mb-3 text-lg font-semibold capitalize">{formatMatchDate(next.match.datum)}</p>
+          {next.match.datum_onbekend && (
+            <p className="mb-2 text-sm">
+              <DatumOnbekendBadge />
+            </p>
+          )}
           <p className="text-xl font-bold">{next.match.thuisteam}</p>
           <p className="text-gray-400">tegen</p>
           <p className="text-xl font-bold">{next.match.uitteam}</p>
@@ -165,7 +171,10 @@ export default function SpelerPage() {
               onClick={() => setExpandedMatchId((id) => (id === match.id ? null : match.id))}
               className="grid w-full grid-cols-[4.5rem_1fr_auto] items-center gap-2 px-4 py-3 text-left text-sm hover:bg-gray-50"
             >
-              <span className="whitespace-nowrap text-gray-500">{formatMatchDateShort(match.datum)}</span>
+              <span className="whitespace-nowrap text-gray-500">
+                {formatMatchDateShort(match.datum)}
+                {match.datum_onbekend && <span title="Datum nog niet bekend"> ⚠️</span>}
+              </span>
               <span className="min-w-0 truncate">
                 {match.thuisteam} - {match.uitteam}
                 {matchLineup && (

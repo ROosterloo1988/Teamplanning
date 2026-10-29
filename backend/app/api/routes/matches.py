@@ -81,8 +81,14 @@ def update_match(match_id: int, payload: MatchUpdate, db: Session = Depends(get_
     if not match:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wedstrijd niet gevonden")
 
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    changes = payload.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         setattr(match, field, value)
+
+    # Beheer vult hier een echte datum in, dus die is dan per definitie weer
+    # bekend — tenzij het formulier zelf al expliciet datum_onbekend meestuurt.
+    if "datum" in changes and "datum_onbekend" not in changes:
+        match.datum_onbekend = False
 
     db.commit()
     db.refresh(match)

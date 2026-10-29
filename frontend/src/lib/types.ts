@@ -33,6 +33,7 @@ export interface MatchOut {
   type: MatchType;
   nummer: string | null;
   datum: string;
+  datum_onbekend: boolean;
   tijd: string | null;
   thuisteam: string;
   uitteam: string;

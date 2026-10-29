@@ -226,6 +226,14 @@ geïmporteerd. Het seizoen (`s=`) wordt afgeleid van het gekozen seizoen
 (`startjaar`-`eindjaar`, bv. 2026 → `26-27`). Een datum die nog als `n.n.b.`
 op de feed staat, wordt overgeslagen tot een latere sync er een echte datum
 voor heeft — dat telt mee als "nog zonder datum" in het importresultaat.
+Had een wedstrijd al wél een datum en staat hij later weer op `n.n.b.`
+(uitgesteld, nieuwe datum nog niet bekend), dan laat de sync de laatst
+bekende datum staan — die kolom mag niet leeg — maar toont overal waar die
+wedstrijd verschijnt (speler, captain, Beheer → Wedstrijden) een
+"⚠️ datum nog niet bekend"-melding, en stuurt een notificatie, zodat niemand
+op de verouderde datum afgaat. Zodra Teambeheer weer een echte datum
+doorgeeft, of een beheerder die er zelf bij **Beheer → Wedstrijden** invult,
+verdwijnt die melding vanzelf weer.
 
 Zodra een wedstrijd gespeeld is, staat de uitslag (bv. `7-2`) ook gewoon op
 de jaarprogramma-pagina — die wordt bij elke sync meegenomen: de
