@@ -14,6 +14,7 @@ from app.models.season import Season
 from app.models.enums import AvailabilityStatus, MatchStatus
 from app.schemas.match import MatchCreate, MatchOut, MatchUpdate
 from app.schemas.reminder import MatchReminderOut
+from app.services.availability import reset_availability
 from app.services.notifications import notify_all_players
 
 router = APIRouter(prefix="/matches", tags=["matches"])
@@ -82,6 +83,7 @@ def update_match(match_id: int, payload: MatchUpdate, db: Session = Depends(get_
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wedstrijd niet gevonden")
 
     changes = payload.model_dump(exclude_unset=True)
+    old_datum = match.datum
     for field, value in changes.items():
         setattr(match, field, value)
 
@@ -89,6 +91,11 @@ def update_match(match_id: int, payload: MatchUpdate, db: Session = Depends(get_
     # bekend — tenzij het formulier zelf al expliciet datum_onbekend meestuurt.
     if "datum" in changes and "datum_onbekend" not in changes:
         match.datum_onbekend = False
+
+    # Een echte datumwijziging maakt eerder gegeven beschikbaarheid
+    # onbetrouwbaar — "ja" voor donderdag zegt niets over de nieuwe datum.
+    if "datum" in changes and match.datum != old_datum:
+        reset_availability(db, match.id)
 
     db.commit()
     db.refresh(match)
