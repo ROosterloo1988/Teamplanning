@@ -270,7 +270,7 @@ export default function BeheerTeambeheerPage() {
             <table className="w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-sm">
               <thead className="bg-gray-50 text-left text-gray-500">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Week</th>
+                  <th className="px-3 py-2 font-medium">Ronde</th>
                   <th className="px-3 py-2 font-medium">Datum</th>
                   <th className="px-3 py-2 font-medium">Thuis</th>
                   <th className="px-3 py-2 font-medium">Uit</th>
@@ -282,7 +282,7 @@ export default function BeheerTeambeheerPage() {
               <tbody className="divide-y divide-gray-100">
                 {preview.map((f, idx) => (
                   <tr key={idx}>
-                    <td className="px-3 py-2">{f.speelweek}</td>
+                    <td className="px-3 py-2">{f.ronde}</td>
                     <td className="px-3 py-2">{f.datum ?? f.datum_raw}</td>
                     <td className="px-3 py-2">{f.thuisteam}</td>
                     <td className="px-3 py-2">{f.uitteam}</td>

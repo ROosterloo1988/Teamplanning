@@ -105,9 +105,10 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
 **Teambeheer-synchronisatie**:
 
 - **Beheer → Teambeheer** koppelt een seizoen aan de Teambeheer SDC
-  jaarprogramma-feed (bond, poule, teamnummer), met een "Wedstrijden
+  team-feed (bond, poule, teamnummer), met een "Wedstrijden
   ophalen"-preview (nieuw/bestaand/nog geen datum) en een
-  "Wedstrijden importeren"-knop.
+  "Wedstrijden importeren"-knop. Deze feed bevat het volledige programma
+  van het eigen team, inclusief bekerwedstrijden.
 - Een ingebouwde nachtelijke achtergrondtaak doet dit automatisch voor elk
   gekoppeld seizoen en meldt nieuwe of gewijzigde wedstrijden via het
   notificatiecentrum — uit te zetten met `TEAMBEHEER_AUTO_SYNC=false`.
@@ -200,14 +201,11 @@ npm run dev
 Ga naar **Beheer → Teambeheer**, kies het seizoen en vul in:
 
 - **Bond** (`d=` in de feed-URL, bv. `11` voor SDC)
-- **Poule** (`div=`, bv. `1A`)
+- **Poule** (`div=`, bv. `1A`) — wordt niet gebruikt om wedstrijden op te
+  halen (dat gaat via het teamnummer), maar wel voor de doorlink naar de
+  competitiestand (zie hieronder)
 - **Teamnummer** (`t=` uit de team-URL van je eigen team, bv.
   `https://feeds.teambeheer.nl/web/team?d=11&t=3852&s=26-27` → `3852`)
-
-Voorbeeld voor seizoen 2026-2027, bond 11, poule 1A:
-`https://feeds.teambeheer.nl/web/jaarprogramma?d=11&s=26-27&div=1A` — dus
-**Bond** `11`, **Poule** `1A`, en het seizoen (`s=26-27`) wordt automatisch
-afgeleid van het gekozen seizoen in de app.
 
 De koppeling (bond/poule/teamnummer) wordt per seizoen apart opgeslagen, niet
 gedeeld tussen seizoenen. Voor een volgend seizoen maak je een nieuw seizoen
@@ -218,22 +216,32 @@ dan vul je gewoon de nieuwe poule in bij dat nieuwe seizoen. De koppeling
 die daarna nooit meer wordt aangepast — de geschiedenis van een seizoen in
 een andere poule blijft dus altijd kloppen.
 
-De app haalt daarmee `https://feeds.teambeheer.nl/web/jaarprogramma?d=<bond>&s=<seizoen>&div=<poule>`
-op — een HTML-pagina, geen API — en parst per speelweek de tabel met datum,
-thuisteam, uitteam en (indien al gespeeld) de uitslag. Alleen wedstrijden
-waarin het opgegeven teamnummer voorkomt (thuis of uit) worden
-geïmporteerd. Het seizoen (`s=`) wordt afgeleid van het gekozen seizoen
-(`startjaar`-`eindjaar`, bv. 2026 → `26-27`). Een datum die nog als `n.n.b.`
-op de feed staat, wordt overgeslagen tot een latere sync er een echte datum
-voor heeft — dat telt mee als "nog zonder datum" in het importresultaat.
-Had een wedstrijd al wél een datum en staat hij later weer op `n.n.b.`
-(uitgesteld, nieuwe datum nog niet bekend), dan laat de sync de laatst
-bekende datum staan — die kolom mag niet leeg — maar toont overal waar die
-wedstrijd verschijnt (speler, captain, Beheer → Wedstrijden) een
-"⚠️ datum nog niet bekend"-melding, en stuurt een notificatie, zodat niemand
-op de verouderde datum afgaat. Zodra Teambeheer weer een echte datum
-doorgeeft, of een beheerder die er zelf bij **Beheer → Wedstrijden** invult,
-verdwijnt die melding vanzelf weer.
+De app haalt daarmee `https://feeds.teambeheer.nl/web/team?d=<bond>&t=<teamnummer>&s=<seizoen>`
+op — een HTML-pagina, geen API — en parst de tabel "Wedstrijden": één rij per
+wedstrijd van dit team, competitie én beker door elkaar (een bekerronde is te
+herkennen aan een rondenummer dat met "b" begint, bv. "b2", en wordt
+geïmporteerd als wedstrijdtype "Beker"). Een "Vrije week" (bye, geen
+tegenstander) wordt overgeslagen. Omdat de feed al alleen de wedstrijden van
+het eigen team toont, is er — anders dan bij de vroegere poulebrede
+jaarprogramma-feed — geen aparte filterstap meer nodig. Elke rij heeft een
+stabiele, wereldwijd unieke Teambeheer-wedstrijd-id (dezelfde id als in de
+link naar het wedstrijdformulier), die als identifier gebruikt wordt in
+plaats van speelweek+teamnamen — stabieler bij een verzetting naar een
+andere speelronde. Wedstrijden die nog via de oudere jaarprogramma-feed
+waren geïmporteerd, worden bij de eerste sync na deze overgang automatisch
+herkend (op seizoen + teamnamen) en naar de nieuwe id omgezet, zonder dat
+ze dubbel worden aangemaakt. Het seizoen (`s=`) wordt afgeleid van het
+gekozen seizoen (`startjaar`-`eindjaar`, bv. 2026 → `26-27`). Een datum die
+nog niet bekend is op de feed (nog geen volledige dd-mm-jjjj-datum), wordt
+overgeslagen tot een latere sync er een echte datum voor heeft — dat telt
+mee als "nog zonder datum" in het importresultaat. Had een wedstrijd al wél
+een datum en staat hij later weer zonder datum (uitgesteld, nieuwe datum nog
+niet bekend), dan laat de sync de laatst bekende datum staan — die kolom mag
+niet leeg — maar toont overal waar die wedstrijd verschijnt (speler,
+captain, Beheer → Wedstrijden) een "⚠️ datum nog niet bekend"-melding, en
+stuurt een notificatie, zodat niemand op de verouderde datum afgaat. Zodra
+Teambeheer weer een echte datum doorgeeft, of een beheerder die er zelf bij
+**Beheer → Wedstrijden** invult, verdwijnt die melding vanzelf weer.
 
 Verandert de datum van een wedstrijd echt (via de sync of een handmatige
 correctie in **Beheer → Wedstrijden**), dan wordt de al ingevulde
@@ -244,7 +252,7 @@ die alleen de teamnaam corrigeert (zelfde datum) laat de beschikbaarheid
 met rust.
 
 Zodra een wedstrijd gespeeld is, staat de uitslag (bv. `7-2`) ook gewoon op
-de jaarprogramma-pagina — die wordt bij elke sync meegenomen: de
+de team-pagina — die wordt bij elke sync meegenomen: de
 wedstrijdstatus gaat automatisch naar "Gespeeld" en de uitslag is te zien in
 **Geschiedenis** en **Beheer → Wedstrijden** (en daar ook handmatig te
 corrigeren, mocht dat nodig zijn). Is de uitslag op de feed een link naar het

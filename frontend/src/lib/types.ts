@@ -138,7 +138,7 @@ export interface TeambeheerConfigOut {
 export type TeambeheerFixtureStatus = "nieuw" | "bestaand" | "geen_datum";
 
 export interface TeambeheerFixturePreview {
-  speelweek: number;
+  ronde: string;
   datum: string | null;
   datum_raw: string;
   thuisteam: string;
