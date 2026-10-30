@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     VAPID_PRIVATE_KEY: str = ""
     VAPID_CLAIMS_EMAIL: str = "mailto:info@degouv.nl"
 
-    # Teambeheer SDC team-feed (ontwerp secties 6 en 7).
+    # Teambeheer SDC jaarprogramma-feed (ontwerp secties 6 en 7).
     TEAMBEHEER_BASE_URL: str = "https://feeds.teambeheer.nl"
     TEAMBEHEER_AUTO_SYNC: bool = True
     TEAMBEHEER_SYNC_HOUR: int = 3
