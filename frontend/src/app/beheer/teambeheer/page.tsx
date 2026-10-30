@@ -368,7 +368,11 @@ export default function BeheerTeambeheerPage() {
                 ) : (
                   <ul className="grid grid-cols-2 gap-1 text-amber-900 sm:grid-cols-4">
                     <li>HTML: {feedTest.html_length} tekens</li>
-                    <li>"computer"-blok: {feedTest.computer_section_found ? "✅" : "❌"}</li>
+                    <li>
+                      "computer"-blok: {feedTest.computer_section_found ? "✅" : "❌"}
+                      {feedTest.computer_sections_count > 0 &&
+                        ` (${feedTest.computer_sections_count}x)`}
+                    </li>
                     <li>"Wedstrijden"-kop: {feedTest.wedstrijden_header_found ? "✅" : "❌"}</li>
                     <li>Tabel: {feedTest.table_found ? "✅" : "❌"}</li>
                     <li>Rijen gevonden: {feedTest.raw_row_count}</li>
@@ -377,6 +381,22 @@ export default function BeheerTeambeheerPage() {
                     <li className="font-medium">Geparst: {feedTest.parsed_count}</li>
                   </ul>
                 )}
+
+                {!feedTest.error &&
+                  !feedTest.wedstrijden_header_found &&
+                  feedTest.headers_seen.length > 0 && (
+                    <div className="rounded-lg bg-amber-100 p-3 text-amber-900">
+                      <p className="font-medium">
+                        Geen "Wedstrijden"-kop gevonden. Kopteksten die wél gevonden zijn op de
+                        pagina:
+                      </p>
+                      <ul className="mt-1 list-disc pl-5">
+                        {feedTest.headers_seen.map((h, idx) => (
+                          <li key={idx}>{h || "(leeg)"}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                 {feedTest.fixtures.length > 0 && (
                   <table className="w-full overflow-hidden rounded-lg border border-amber-200 bg-white">

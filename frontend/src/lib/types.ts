@@ -173,6 +173,7 @@ export interface TeamFeedDiagnosticsOut {
   url: string;
   html_length: number;
   computer_section_found: boolean;
+  computer_sections_count: number;
   wedstrijden_header_found: boolean;
   table_found: boolean;
   tbody_found: boolean;
@@ -181,5 +182,6 @@ export interface TeamFeedDiagnosticsOut {
   skipped_vrije_week: number;
   parsed_count: number;
   error: string | null;
+  headers_seen: string[];
   fixtures: TeamFeedFixturePreview[];
 }

@@ -139,6 +139,49 @@ def test_parse_finds_wedstrijden_header_with_icon_inside():
     assert fixtures[0].official_id == 123
 
 
+def test_parse_finds_table_in_second_computer_section():
+    # Op de echte server komt het "computer only row"-patroon meerdere keren
+    # voor op de pagina (bv. ook voor de menubalk) — de eerste ".computer"-
+    # div bevat dan niet de wedstrijdentabel. De parser moet alle
+    # ".computer"-secties doorzoeken, niet alleen de eerste.
+    html = """
+    <div class="computer only row">
+      <h2 class="ui header">Menu</h2>
+    </div>
+    <div class="computer only row">
+      <h2 class="ui header">Wedstrijden</h2>
+      <table><tbody>
+        <tr>
+          <td title="123">1</td>
+          <td>02-09-2026</td>
+          <td><a href="/web/team?d=11&t=3854&s=26-27">Opponent</a></td>
+          <td><a href="/web/team?d=11&t=3852&s=26-27">DE GOUV</a></td>
+          <td></td>
+        </tr>
+      </tbody></table>
+    </div>
+    """
+    diag = TeamFeedDiagnostics(url="https://example.invalid")
+    fixtures = parse_team_page(html, diag)
+    assert diag.computer_sections_count == 2
+    assert diag.wedstrijden_header_found is True
+    assert len(fixtures) == 1
+
+
+def test_parse_reports_headers_seen_when_wedstrijden_missing():
+    html = """
+    <div class="computer only row">
+      <h2 class="ui header">Team: DE GOUV</h2>
+      <h2 class="ui header">Spelers</h2>
+    </div>
+    """
+    diag = TeamFeedDiagnostics(url="https://example.invalid")
+    fixtures = parse_team_page(html, diag)
+    assert fixtures == []
+    assert diag.wedstrijden_header_found is False
+    assert diag.headers_seen == ["Team: DE GOUV", "Spelers"]
+
+
 def test_diagnose_team_feed_happy_path(monkeypatch):
     from app.services import teambeheer_team_feed as module
 

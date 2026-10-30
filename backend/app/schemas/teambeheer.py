@@ -63,6 +63,7 @@ class TeamFeedDiagnosticsOut(BaseModel):
     url: str
     html_length: int
     computer_section_found: bool
+    computer_sections_count: int
     wedstrijden_header_found: bool
     table_found: bool
     tbody_found: bool
@@ -71,4 +72,5 @@ class TeamFeedDiagnosticsOut(BaseModel):
     skipped_vrije_week: int
     parsed_count: int
     error: str | None = None
+    headers_seen: list[str] = []
     fixtures: list[TeamFeedFixturePreview]
