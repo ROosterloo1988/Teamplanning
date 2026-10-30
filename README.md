@@ -73,7 +73,14 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
 - **Beheer → Wedstrijden** laat bestaande wedstrijden bewerken (datum, teams,
   locatie, type, seizoen). Een locatie is meteen een tikbare Google
   Maps-link (op elk scherm waar de locatie getoond wordt) — vul bij voorkeur
-  het volledige adres in, dan kun je er direct mee navigeren.
+  het volledige adres in, dan kun je er direct mee navigeren. Staat een
+  wedstrijd er per ongeluk dubbel op (bv. een handmatig ingevulde wedstrijd
+  die een latere Teambeheer-sync niet herkende en er een tweede naast
+  aanmaakte), dan kun je via **Samenvoegen** de twee laten opgaan in één
+  wedstrijd: je kiest welke je houdt, en al ingevulde beschikbaarheid,
+  opstelling, locatie en uitslag van de dubbele wedstrijd worden overgenomen
+  waar dit er op de wedstrijd die je houdt nog niet stond — daarna wordt de
+  dubbele wedstrijd verwijderd.
 - **Seizoenen**: **Beheer → Seizoenen** beheert seizoenen en wijst er één als
   actief aan; nieuwe wedstrijden krijgen automatisch het actieve seizoen.
   Wedstrijden, statistieken en de wedstrijdhistorie zijn filterbaar per

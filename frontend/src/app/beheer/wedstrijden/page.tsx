@@ -53,6 +53,11 @@ export default function BeheerWedstrijdenPage() {
   const [editError, setEditError] = useState<string | null>(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
 
+  const [mergingId, setMergingId] = useState<number | null>(null);
+  const [mergeTargetId, setMergeTargetId] = useState<string>("");
+  const [mergeError, setMergeError] = useState<string | null>(null);
+  const [merging, setMerging] = useState(false);
+
   const loadMatches = useCallback(async (seasonId: string) => {
     const query = seasonId ? `?season_id=${seasonId}` : "";
     const data = await api.get<MatchOut[]>(`/matches${query}`);
@@ -128,6 +133,32 @@ export default function BeheerWedstrijdenPage() {
   function cancelEdit() {
     setEditingId(null);
     setEditError(null);
+  }
+
+  function startMerge(match: MatchOut) {
+    setMergingId(match.id);
+    setMergeTargetId("");
+    setMergeError(null);
+  }
+
+  function cancelMerge() {
+    setMergingId(null);
+    setMergeError(null);
+  }
+
+  async function handleMergeConfirm(keepId: number) {
+    if (!mergeTargetId) return;
+    setMergeError(null);
+    setMerging(true);
+    try {
+      await api.post(`/matches/${keepId}/merge/${mergeTargetId}`);
+      setMergingId(null);
+      await loadMatches(seasonFilter);
+    } catch (err) {
+      setMergeError(err instanceof ApiError ? err.message : "Samenvoegen mislukt");
+    } finally {
+      setMerging(false);
+    }
   }
 
   async function handleEditSubmit(e: React.FormEvent) {
@@ -305,13 +336,59 @@ export default function BeheerWedstrijdenPage() {
                     <LocatieLink locatie={m.locatie} />
                   </div>
                 )}
+                {mergingId === m.id && (
+                  <div className="mt-2 space-y-2 rounded-lg bg-gray-50 p-3">
+                    <p className="text-xs text-gray-500">
+                      Deze wedstrijd blijft bestaan. Kies de dubbele wedstrijd die erin opgaat en
+                      daarna wordt verwijderd — al ingevulde beschikbaarheid/opstelling van die
+                      dubbele wedstrijd wordt overgenomen waar dit er zelf nog niet staat.
+                    </p>
+                    <select
+                      value={mergeTargetId}
+                      onChange={(e) => setMergeTargetId(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    >
+                      <option value="">Kies de dubbele wedstrijd...</option>
+                      {matches
+                        .filter((other) => other.id !== m.id)
+                        .map((other) => (
+                          <option key={other.id} value={other.id}>
+                            {other.datum} · {other.thuisteam} - {other.uitteam}
+                          </option>
+                        ))}
+                    </select>
+                    {mergeError && <p className="text-sm text-red-600">{mergeError}</p>}
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={cancelMerge}
+                        className="flex-1 rounded-lg border border-gray-300 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                      >
+                        Annuleren
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMergeConfirm(m.id)}
+                        disabled={merging || !mergeTargetId}
+                        className="flex-1 rounded-lg bg-brand py-1.5 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+                      >
+                        {merging ? "Bezig..." : "Samenvoegen"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <button
-                onClick={() => startEdit(m)}
-                className="shrink-0 text-xs font-medium text-brand hover:underline"
-              >
-                Bewerken
-              </button>
+              <div className="flex shrink-0 flex-col items-end gap-1 text-xs font-medium">
+                <button onClick={() => startEdit(m)} className="text-brand hover:underline">
+                  Bewerken
+                </button>
+                <button
+                  onClick={() => (mergingId === m.id ? cancelMerge() : startMerge(m))}
+                  className="text-gray-500 hover:underline"
+                >
+                  {mergingId === m.id ? "Sluiten" : "Samenvoegen"}
+                </button>
+              </div>
             </div>
           )
         )}
