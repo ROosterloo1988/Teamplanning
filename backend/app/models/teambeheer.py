@@ -7,7 +7,9 @@ from app.db.base_class import Base
 
 
 class TeambeheerConfig(Base):
-    """Koppeling met de Teambeheer SDC jaarprogramma-feed, per seizoen.
+    """Koppeling met de Teambeheer SDC team-feed, per seizoen. `poule` wordt
+    niet gebruikt om wedstrijden op te halen (dat gaat via `team_id`), maar
+    wel voor de link naar de poulestand.
 
     Zie functioneel ontwerp v1 secties 6 (import) en 7 (automatische sync).
     """
