@@ -27,6 +27,7 @@ from app.models.match import Match
 from app.models.player import Player
 from app.models.season import Season
 from app.models.teambeheer import TeambeheerConfig
+from app.services.availability import reset_availability
 from app.services.notifications import notify_all_players
 
 SPEELWEEK_RE = re.compile(r"Speelweek\s+(\d+)", re.IGNORECASE)
@@ -360,13 +361,17 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
             existing = db.query(Match).filter(Match.external_id == external_id).first()
             if existing and not existing.datum_onbekend:
                 existing.datum_onbekend = True
+                # Eerder gegeven "ja"/"nee" sloeg op de (nu vervallen) datum
+                # en zegt niets over wanneer de wedstrijd straks wél is.
+                reset_availability(db, existing.id)
                 notify_all_players(
                     db,
                     type_="match_changed",
                     title=f"⚠️ Datum nog niet bekend: {thuisteam} - {uitteam}",
                     body=(
                         f"Was: {existing.datum.strftime('%d-%m-%Y')} — wedstrijd is uitgesteld, "
-                        "nieuwe datum nog niet bekend."
+                        "nieuwe datum nog niet bekend. Geef je beschikbaarheid opnieuw door zodra "
+                        "de nieuwe datum bekend is."
                     ),
                     match_id=existing.id,
                 )
@@ -386,11 +391,9 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
 
         match = db.query(Match).filter(Match.external_id == external_id).first()
         if match:
+            date_changed = match.datum != datum or match.datum_onbekend
             schedule_changed = (
-                match.datum != datum
-                or match.datum_onbekend
-                or match.thuisteam != thuisteam
-                or match.uitteam != uitteam
+                date_changed or match.thuisteam != thuisteam or match.uitteam != uitteam
             )
             uitslag_changed = bool(uitslag) and (
                 match.uitslag != uitslag or match.uitslag_url != uitslag_url
@@ -403,6 +406,11 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
                 match.datum_onbekend = False
                 match.thuisteam = thuisteam
                 match.uitteam = uitteam
+                if date_changed:
+                    # Een echte datumwijziging maakt eerder gegeven
+                    # beschikbaarheid onbetrouwbaar — die sloeg op de oude
+                    # datum, niet op de nieuwe.
+                    reset_availability(db, match.id)
                 notify_all_players(
                     db,
                     type_="match_changed",
@@ -410,6 +418,7 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
                     body=(
                         f"Was: {'datum nog niet bekend' if old_datum_onbekend else old_datum.strftime('%d-%m-%Y')}"
                         f" — nu: {datum.strftime('%d-%m-%Y')}"
+                        + (" Geef je beschikbaarheid opnieuw door." if date_changed else "")
                     ),
                     match_id=match.id,
                 )

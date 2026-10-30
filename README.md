@@ -235,6 +235,14 @@ op de verouderde datum afgaat. Zodra Teambeheer weer een echte datum
 doorgeeft, of een beheerder die er zelf bij **Beheer → Wedstrijden** invult,
 verdwijnt die melding vanzelf weer.
 
+Verandert de datum van een wedstrijd echt (via de sync of een handmatige
+correctie in **Beheer → Wedstrijden**), dan wordt de al ingevulde
+beschikbaarheid van iedereen voor die wedstrijd teruggezet naar "geen
+antwoord" — een eerder "ja" of "nee" sloeg op de oude datum, niet op de
+nieuwe, en zou spelers anders op het verkeerde been zetten. Een wijziging
+die alleen de teamnaam corrigeert (zelfde datum) laat de beschikbaarheid
+met rust.
+
 Zodra een wedstrijd gespeeld is, staat de uitslag (bv. `7-2`) ook gewoon op
 de jaarprogramma-pagina — die wordt bij elke sync meegenomen: de
 wedstrijdstatus gaat automatisch naar "Gespeeld" en de uitslag is te zien in
