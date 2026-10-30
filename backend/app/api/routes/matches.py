@@ -15,6 +15,7 @@ from app.models.enums import AvailabilityStatus, MatchStatus
 from app.schemas.match import MatchCreate, MatchOut, MatchUpdate
 from app.schemas.reminder import MatchReminderOut
 from app.services.availability import reset_availability
+from app.services.matches import MatchMergeError, merge_matches
 from app.services.notifications import notify_all_players
 
 router = APIRouter(prefix="/matches", tags=["matches"])
@@ -100,6 +101,27 @@ def update_match(match_id: int, payload: MatchUpdate, db: Session = Depends(get_
     db.commit()
     db.refresh(match)
     return match
+
+
+@router.post(
+    "/{keep_id}/merge/{duplicate_id}", response_model=MatchOut, dependencies=[Depends(require_beheer)]
+)
+def merge_duplicate_match(keep_id: int, duplicate_id: int, db: Session = Depends(get_db)):
+    """Voegt `duplicate_id` samen in `keep_id` en verwijdert de dubbele
+    wedstrijd — bv. na een sync die een handmatig ingevulde wedstrijd niet
+    herkende en 'm per ongeluk een tweede keer aanmaakte."""
+    keep = db.get(Match, keep_id)
+    if not keep:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wedstrijd niet gevonden")
+    duplicate = db.get(Match, duplicate_id)
+    if not duplicate:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Dubbele wedstrijd niet gevonden"
+        )
+    try:
+        return merge_matches(db, keep, duplicate)
+    except MatchMergeError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 @router.post("", response_model=MatchOut, dependencies=[Depends(require_beheer)])
