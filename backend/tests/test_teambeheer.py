@@ -2,118 +2,147 @@ from datetime import date
 from pathlib import Path
 
 from app.services.teambeheer import (
-    parse_jaarprogramma,
     parse_speelgelegenheden,
+    parse_team_page,
     parse_teams,
-    resolve_year,
+    resolve_team_date,
     season_code,
 )
 
-FIXTURE = Path(__file__).parent / "fixtures" / "teambeheer_jaarprogramma_1a.html"
-FULL_SEASON_FIXTURE = Path(__file__).parent / "fixtures" / "teambeheer_jaarprogramma_1a_full_season.html"
+TEAM_FIXTURE = Path(__file__).parent / "fixtures" / "teambeheer_team_3852.html"
 SPEELGELEGENHEDEN_FIXTURE = Path(__file__).parent / "fixtures" / "teambeheer_speelgelegenheden.html"
 TEAMS_FIXTURE = Path(__file__).parent / "fixtures" / "teambeheer_teams.html"
 
 
 def _fixtures():
-    html = FIXTURE.read_text()
-    return parse_jaarprogramma(html)
+    return parse_team_page(TEAM_FIXTURE.read_text())
 
 
-def test_parse_finds_three_speelweken():
+def test_parse_reads_only_computer_section_rows():
+    # De tablet- en mobiel-secties herhalen wedstrijd 1 nog een keer (zonder
+    # de `title`-id) — die mogen niet meegeteld worden, anders telt alles
+    # drievoudig.
+    assert len(_fixtures()) == 16
+
+
+def test_parse_skips_vrije_week():
     fixtures = _fixtures()
-    assert {f.speelweek for f in fixtures} == {1, 2, 3}
+    assert all(f.official_id != 3305772 for f in fixtures)
+    assert all(f.datum_raw != "Vrije week" for f in fixtures)
 
 
-def test_parse_speelweek_1_row_count_and_score():
-    fixtures = [f for f in _fixtures() if f.speelweek == 1]
-    assert len(fixtures) == 7
-    mila_row = next(f for f in fixtures if f.thuis_naam == "MILA B")
-    assert mila_row.uit_naam == "Woodpeckers 1"
-    assert mila_row.score == "-7"
-    assert mila_row.score_url is None  # plat tekst-scorecel, geen wedstrijdformulier-link
-
-
-def test_parse_score_url_from_wedstrijdformulier_link():
-    """Een afgehandelde wedstrijd heeft een score-cel die naar het officiele
-    wedstrijdformulier linkt (/web/wedstrijdformulier/?d=&w=&s=), niet zomaar
-    platte tekst."""
-    fixtures = [f for f in parse_jaarprogramma(FULL_SEASON_FIXTURE.read_text()) if f.speelweek == 1]
-    linked_row = next(f for f in fixtures if f.thuis_naam == "Mansier Zittie?")
-    assert linked_row.score == "7-2"
-    assert linked_row.score_url == "https://feeds.teambeheer.nl/web/wedstrijdformulier/?d=11&w=3135387&s=26-27"
-
-
-def test_de_gouv_appears_as_thuis_and_uit():
+def test_parse_flags_beker_rows():
     fixtures = _fixtures()
-    de_gouv = [f for f in fixtures if f.thuis_id == 3852 or f.uit_id == 3852]
-    assert len(de_gouv) == 3  # once per speelweek in the fixture
+    beker = [f for f in fixtures if f.is_beker]
+    assert {f.official_id for f in beker} == {3386239}
 
-    week1 = next(f for f in de_gouv if f.speelweek == 1)
-    assert week1.thuis_naam == "Het Praothuus 2"
-    assert week1.thuis_id == 3854
-    assert week1.uit_naam.strip() == "DE GOUV"
-    assert week1.uit_id == 3852
-
-    week2 = next(f for f in de_gouv if f.speelweek == 2)
-    assert week2.thuis_naam.strip() == "DE GOUV"
-    assert week2.uit_naam == "MILA B"
-
-    week3 = next(f for f in de_gouv if f.speelweek == 3)
-    assert week3.thuis_naam == "Woodpeckers 1"
-    assert week3.uit_naam.strip() == "DE GOUV"
+    cup_match = beker[0]
+    assert cup_match.ronde == "b2"
+    assert cup_match.datum_raw == "22-10-2026"
+    assert cup_match.thuis_naam.strip() == "DE GOUV"
+    assert cup_match.uit_naam == "Lange nie bes't"
+    assert cup_match.score == "8-1"
+    assert (
+        cup_match.score_url
+        == "https://feeds.teambeheer.nl/web/wedstrijdformulier/?d=11&w=3386239&s=26-27"
+    )
 
 
-def test_nnb_date_is_preserved_raw():
-    fixtures = [f for f in _fixtures() if f.speelweek == 2]
-    kokkis_row = next(f for f in fixtures if f.thuis_naam == "Kokki's Café")
-    assert kokkis_row.datum_raw == "n.n.b."
+def test_parse_competitie_rows_not_flagged_as_beker():
+    fixtures = _fixtures()
+    assert all(not f.is_beker for f in fixtures if f.ronde.isdigit())
 
 
-def test_resolve_year_splits_on_season_boundary():
-    # Seizoen 2026-2027: juli t/m december -> startjaar, januari t/m juni -> eindjaar.
-    assert resolve_year("02-09", 2026, 2027) == date(2026, 9, 2)
-    assert resolve_year("14-01", 2026, 2027) == date(2027, 1, 14)
+def test_parse_official_id_and_teams_from_first_row():
+    row = next(f for f in _fixtures() if f.official_id == 3135390)
+    assert row.ronde == "1"
+    assert row.datum_raw == "02-09-2026"
+    assert row.thuis_naam == "Het Praothuus 2"
+    assert row.thuis_id == 3854
+    assert row.uit_naam.strip() == "DE GOUV"
+    assert row.uit_id == 3852
+    assert row.score == "3-6"
+    assert (
+        row.score_url == "https://feeds.teambeheer.nl/web/wedstrijdformulier/?d=11&w=3135390&s=26-27"
+    )
 
 
-def test_resolve_year_returns_none_for_unknown_date():
-    assert resolve_year("n.n.b.", 2026, 2027) is None
-    assert resolve_year("", 2026, 2027) is None
+def test_parse_unconfirmed_score_is_plain_text_without_link():
+    row = next(f for f in _fixtures() if f.official_id == 3135432)
+    assert row.score == "6-"
+    assert row.score_url is None
+
+
+def test_parse_empty_score_for_future_match():
+    row = next(f for f in _fixtures() if f.official_id == 3135439)
+    assert row.score == ""
+    assert row.score_url is None
+
+
+def test_parse_finds_wedstrijden_header_with_icon_inside():
+    # Op de echte server staat er een icoontje náást de koptekst
+    # (<h2><i class="..."></i>Wedstrijden</h2>), waardoor h2.string None is
+    # ook al toont de kop gewoon "Wedstrijden" — get_text() moet dat geval
+    # dus wel vinden, anders faalt de hele parse stilletjes op 0 rijen.
+    html = """
+    <div class="computer only row">
+      <h2 class="ui header"><i class="calendar icon"></i>Wedstrijden</h2>
+      <table><tbody>
+        <tr>
+          <td title="123">1</td>
+          <td>02-09-2026</td>
+          <td><a href="/web/team?d=11&t=3854&s=26-27">Opponent</a></td>
+          <td><a href="/web/team?d=11&t=3852&s=26-27">DE GOUV</a></td>
+          <td></td>
+        </tr>
+      </tbody></table>
+    </div>
+    """
+    fixtures = parse_team_page(html)
+    assert len(fixtures) == 1
+    assert fixtures[0].official_id == 123
+
+
+def test_parse_finds_table_in_second_computer_section():
+    # De echte pagina gebruikt het "computer only row"-patroon meerdere
+    # keren (bv. ook voor de menubalk) — de eerste ".computer"-div bevat dan
+    # niet de wedstrijdentabel. De parser moet alle ".computer"-secties
+    # doorzoeken, niet alleen de eerste.
+    html = """
+    <div class="computer only row">
+      <h2 class="ui header">Menu</h2>
+    </div>
+    <div class="computer only row">
+      <h2 class="ui header">Wedstrijden</h2>
+      <table><tbody>
+        <tr>
+          <td title="123">1</td>
+          <td>02-09-2026</td>
+          <td><a href="/web/team?d=11&t=3854&s=26-27">Opponent</a></td>
+          <td><a href="/web/team?d=11&t=3852&s=26-27">DE GOUV</a></td>
+          <td></td>
+        </tr>
+      </tbody></table>
+    </div>
+    """
+    fixtures = parse_team_page(html)
+    assert len(fixtures) == 1
+
+
+def test_resolve_team_date_parses_full_dd_mm_yyyy():
+    assert resolve_team_date("02-09-2026") == date(2026, 9, 2)
+    assert resolve_team_date("20-05-2027") == date(2027, 5, 20)
+
+
+def test_resolve_team_date_returns_none_for_unknown_date():
+    assert resolve_team_date("Vrije week") is None
+    assert resolve_team_date("n.n.b.") is None
+    assert resolve_team_date("") is None
 
 
 def test_season_code_format():
     assert season_code(2026) == "26-27"
     assert season_code(2099) == "99-00"
-
-
-def test_de_gouv_jan_to_may_dates_resolve_into_next_calendar_year():
-    """Regressietest tegen een echte, volledige jaarprogramma-pagina (speelweek
-    1 t/m 26): rond de jaarwisseling staat er op de feed nog steeds gewoon
-    'DD-MM' (bv. '07-01'), zonder jaartal. resolve_year moet die met de
-    seizoensgrens (juli t/m december -> startjaar, januari t/m juni ->
-    eindjaar) naar het juiste kalenderjaar 2027 omzetten, niet als
-    'geen datum' (n.n.b.) behandelen."""
-    html = FULL_SEASON_FIXTURE.read_text()
-    fixtures = [f for f in parse_jaarprogramma(html) if f.thuis_id == 3852 or f.uit_id == 3852]
-    assert len(fixtures) == 26  # DE GOUV speelt elke speelweek van 1 t/m 26
-
-    resolved = {f.speelweek: resolve_year(f.datum_raw, 2026, 2027) for f in fixtures}
-    assert None not in resolved.values()
-
-    # Voorbeelden na de jaarwisseling: allemaal 2027, oplopend met de speelweek.
-    assert resolved[13] == date(2027, 1, 7)
-    assert resolved[14] == date(2027, 1, 14)
-    assert resolved[15] == date(2027, 1, 20)
-    assert resolved[18] == date(2027, 2, 24)
-    assert resolved[26] == date(2027, 5, 20)
-
-    # ... en de eerste seizoenshelft blijft gewoon 2026.
-    assert resolved[1] == date(2026, 9, 2)
-    assert resolved[12] == date(2026, 12, 10)
-
-    # De reeks moet chronologisch oplopen (geen datum "voor" de vorige speelweek).
-    ordered = [resolved[week] for week in sorted(resolved)]
-    assert ordered == sorted(ordered)
 
 
 def test_parse_speelgelegenheden():

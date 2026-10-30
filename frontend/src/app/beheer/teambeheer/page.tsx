@@ -9,7 +9,6 @@ import {
   TeambeheerConfigOut,
   TeambeheerFixturePreview,
   TeambeheerSyncResult,
-  TeamFeedDiagnosticsOut,
 } from "@/lib/types";
 import { Nav } from "@/components/Nav";
 import { BeheerNav } from "@/components/BeheerNav";
@@ -44,16 +43,11 @@ export default function BeheerTeambeheerPage() {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [feedTest, setFeedTest] = useState<TeamFeedDiagnosticsOut | null>(null);
-  const [feedTestError, setFeedTestError] = useState<string | null>(null);
-  const [feedTesting, setFeedTesting] = useState(false);
 
   const loadConfig = useCallback(async (sid: number) => {
     setPreview(null);
     setSyncResult(null);
     setError(null);
-    setFeedTest(null);
-    setFeedTestError(null);
     try {
       const data = await api.get<TeambeheerConfigOut>(`/teambeheer/config/${sid}`);
       setConfig(data);
@@ -131,20 +125,6 @@ export default function BeheerTeambeheerPage() {
     }
   }
 
-  async function handleFeedTest() {
-    if (!seasonId) return;
-    setFeedTestError(null);
-    setFeedTesting(true);
-    try {
-      const data = await api.get<TeamFeedDiagnosticsOut>(`/teambeheer/team-feed-test/${seasonId}`);
-      setFeedTest(data);
-    } catch (err) {
-      setFeedTestError(err instanceof ApiError ? err.message : "Testen mislukt");
-    } finally {
-      setFeedTesting(false);
-    }
-  }
-
   async function handleSync() {
     if (!seasonId) return;
     setError(null);
@@ -183,8 +163,8 @@ export default function BeheerTeambeheerPage() {
         </select>
       </div>
       <p className="mb-6 text-gray-500">
-        Koppel dit seizoen aan de Teambeheer SDC jaarprogramma-feed. De app haalt hiermee
-        automatisch elke nacht nieuwe of gewijzigde wedstrijden op.
+        Koppel dit seizoen aan de Teambeheer SDC team-feed (competitie én beker). De app haalt
+        hiermee automatisch elke nacht nieuwe of gewijzigde wedstrijden op.
       </p>
 
       <h2 className="mb-3 font-medium">Koppeling</h2>
@@ -290,7 +270,7 @@ export default function BeheerTeambeheerPage() {
             <table className="w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-sm">
               <thead className="bg-gray-50 text-left text-gray-500">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Week</th>
+                  <th className="px-3 py-2 font-medium">Ronde</th>
                   <th className="px-3 py-2 font-medium">Datum</th>
                   <th className="px-3 py-2 font-medium">Thuis</th>
                   <th className="px-3 py-2 font-medium">Uit</th>
@@ -302,7 +282,10 @@ export default function BeheerTeambeheerPage() {
               <tbody className="divide-y divide-gray-100">
                 {preview.map((f, idx) => (
                   <tr key={idx}>
-                    <td className="px-3 py-2">{f.speelweek}</td>
+                    <td className="px-3 py-2">
+                      {f.ronde}
+                      {f.is_beker && " 🏆"}
+                    </td>
                     <td className="px-3 py-2">{f.datum ?? f.datum_raw}</td>
                     <td className="px-3 py-2">{f.thuisteam}</td>
                     <td className="px-3 py-2">{f.uitteam}</td>
@@ -340,94 +323,6 @@ export default function BeheerTeambeheerPage() {
               </tbody>
             </table>
           )}
-
-          <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4">
-            <h2 className="mb-1 font-medium text-amber-900">🧪 Beta: nieuwe feed testen</h2>
-            <p className="mb-3 text-sm text-amber-800">
-              Probeert de alternatieve Teambeheer-feed (per team, inclusief bekerwedstrijden) uit.
-              Slaat niets op — alleen bedoeld om te testen of deze op de echte server werkt,
-              voordat we 'm eventueel samenvoegen met de echte sync hierboven.
-            </p>
-            <button
-              onClick={handleFeedTest}
-              disabled={feedTesting}
-              className="rounded-lg border border-amber-400 bg-white px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
-            >
-              {feedTesting ? "Bezig..." : "Nieuwe feed testen"}
-            </button>
-
-            {feedTestError && <p className="mt-3 text-sm text-red-600">{feedTestError}</p>}
-
-            {feedTest && (
-              <div className="mt-4 space-y-3 text-sm">
-                <p className="break-all text-amber-800">
-                  <span className="font-medium">URL:</span> {feedTest.url}
-                </p>
-                {feedTest.error ? (
-                  <p className="text-red-600">⚠️ Ophalen mislukt: {feedTest.error}</p>
-                ) : (
-                  <ul className="grid grid-cols-2 gap-1 text-amber-900 sm:grid-cols-4">
-                    <li>HTML: {feedTest.html_length} tekens</li>
-                    <li>
-                      "computer"-blok: {feedTest.computer_section_found ? "✅" : "❌"}
-                      {feedTest.computer_sections_count > 0 &&
-                        ` (${feedTest.computer_sections_count}x)`}
-                    </li>
-                    <li>"Wedstrijden"-kop: {feedTest.wedstrijden_header_found ? "✅" : "❌"}</li>
-                    <li>Tabel: {feedTest.table_found ? "✅" : "❌"}</li>
-                    <li>Rijen gevonden: {feedTest.raw_row_count}</li>
-                    <li>Overgeslagen (vrije week): {feedTest.skipped_vrije_week}</li>
-                    <li>Overgeslagen (geen id): {feedTest.skipped_no_title}</li>
-                    <li className="font-medium">Geparst: {feedTest.parsed_count}</li>
-                  </ul>
-                )}
-
-                {!feedTest.error &&
-                  !feedTest.wedstrijden_header_found &&
-                  feedTest.headers_seen.length > 0 && (
-                    <div className="rounded-lg bg-amber-100 p-3 text-amber-900">
-                      <p className="font-medium">
-                        Geen "Wedstrijden"-kop gevonden. Kopteksten die wél gevonden zijn op de
-                        pagina:
-                      </p>
-                      <ul className="mt-1 list-disc pl-5">
-                        {feedTest.headers_seen.map((h, idx) => (
-                          <li key={idx}>{h || "(leeg)"}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                {feedTest.fixtures.length > 0 && (
-                  <table className="w-full overflow-hidden rounded-lg border border-amber-200 bg-white">
-                    <thead className="bg-amber-100 text-left text-amber-900">
-                      <tr>
-                        <th className="px-3 py-2 font-medium">Ronde</th>
-                        <th className="px-3 py-2 font-medium">Datum</th>
-                        <th className="px-3 py-2 font-medium">Thuis</th>
-                        <th className="px-3 py-2 font-medium">Uit</th>
-                        <th className="px-3 py-2 font-medium">Uitslag</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-amber-100">
-                      {feedTest.fixtures.map((f, idx) => (
-                        <tr key={idx}>
-                          <td className="px-3 py-2">
-                            {f.ronde}
-                            {f.is_beker && " 🏆"}
-                          </td>
-                          <td className="px-3 py-2">{f.datum ?? f.datum_raw}</td>
-                          <td className="px-3 py-2">{f.thuisteam}</td>
-                          <td className="px-3 py-2">{f.uitteam}</td>
-                          <td className="px-3 py-2">{f.uitslag ?? "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
-          </div>
         </>
       )}
     </div>

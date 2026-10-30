@@ -1,12 +1,20 @@
-"""Import van de Teambeheer SDC jaarprogramma-feed.
+"""Import van de Teambeheer SDC team-feed.
 
-De feed (https://feeds.teambeheer.nl/web/jaarprogramma?d=<bond>&s=<seizoen>&div=<poule>)
-is geen data-API maar een Semantic-UI HTML-pagina: per speelweek een
-<div class="column"> met een <h4>Speelweek N</h4> en een tabel met kolommen
-Datum / Thuisteam / Uitteam / Score. Team-namen zijn links naar
-/web/team?d=<bond>&t=<teamnummer>&s=<seizoen> — dat teamnummer is de enige
-stabiele identifier van een team en wordt gebruikt om "onze" wedstrijden uit
-de poule te filteren. Zie functioneel ontwerp v1 secties 6 en 7.
+De feed (https://feeds.teambeheer.nl/web/team?d=<bond>&t=<team>&s=<seizoen>)
+is geen data-API maar een Semantic-UI HTML-pagina. Die pagina gebruikt het
+responsive "computer only row"/"tablet only row"/"mobile only row"-patroon
+meerdere keren (ook voor bv. de menubalk) — de juiste sectie is de
+".computer"-div die een "Wedstrijden"-koptekst (h1-h4) bevat, met daarna
+één tabel met ALLE wedstrijden van dit ene team (competitie én beker door
+elkaar), dus geen filterstap nodig. Elke rij heeft een `title`-attribuut op
+de eerste kolom met Teambeheer's eigen, wereldwijd unieke wedstrijd-id
+(dezelfde `w=`-waarde als in de link naar /web/wedstrijdformulier/) —
+stabieler dan speelweek+teams, want die verschuiven bij een reschedule naar
+een andere ronde. Bekerwedstrijden zijn te herkennen aan een rondenummer dat
+met "b" begint (bv. "b1", "b2"); een "Vrije week" (bye) heeft geen
+tegenstander-link en wordt overgeslagen. Team-namen zijn links naar
+/web/team?d=<bond>&t=<teamnummer>&s=<seizoen>.
+Zie functioneel ontwerp v1 secties 6 en 7.
 """
 
 from __future__ import annotations
@@ -30,17 +38,18 @@ from app.models.teambeheer import TeambeheerConfig
 from app.services.availability import reset_availability
 from app.services.notifications import notify_all_players
 
-SPEELWEEK_RE = re.compile(r"Speelweek\s+(\d+)", re.IGNORECASE)
-DATUM_RE = re.compile(r"^(\d{2})-(\d{2})$")
+TEAM_DATUM_RE = re.compile(r"^(\d{2})-(\d{2})-(\d{4})$")
 
 
 class TeambeheerFetchError(Exception):
-    """De jaarprogramma-pagina kon niet opgehaald of gelezen worden."""
+    """De team-pagina kon niet opgehaald of gelezen worden."""
 
 
 @dataclass
-class TeambeheerFixture:
-    speelweek: int
+class TeamFixture:
+    official_id: int
+    ronde: str
+    is_beker: bool
     datum_raw: str
     thuis_id: int
     thuis_naam: str
@@ -81,13 +90,13 @@ def season_code(startjaar: int) -> str:
     return f"{startjaar % 100:02d}-{(startjaar + 1) % 100:02d}"
 
 
-def resolve_year(datum_raw: str, startjaar: int, eindjaar: int) -> date | None:
-    """'02-09' + seizoen 2026-2027 -> 2026-09-02. 'n.n.b.' of onbekend -> None."""
-    match = DATUM_RE.match(datum_raw.strip())
+def resolve_team_date(datum_raw: str) -> date | None:
+    """'02-09-2026' -> 2026-09-02. Alles zonder dat volledige dd-mm-jjjj-
+    formaat (bv. 'n.n.b.', 'Vrije week') betekent: (nog) geen bekende datum."""
+    match = TEAM_DATUM_RE.match(datum_raw.strip())
     if not match:
         return None
-    day, month = int(match.group(1)), int(match.group(2))
-    year = startjaar if month >= 7 else eindjaar
+    day, month, year = int(match.group(1)), int(match.group(2)), int(match.group(3))
     try:
         return date(year, month, day)
     except ValueError:
@@ -132,8 +141,8 @@ def _fetch_page(path: str, params: dict) -> str:
     return response.text
 
 
-def fetch_jaarprogramma(bond_id: int, s_code: str, poule: str) -> str:
-    return _fetch_page("/web/jaarprogramma", {"d": bond_id, "s": s_code, "div": poule})
+def fetch_team_page(bond_id: int, s_code: str, team_id: int) -> str:
+    return _fetch_page("/web/team", {"d": bond_id, "s": s_code, "t": team_id})
 
 
 def fetch_speelgelegenheden(bond_id: int, s_code: str) -> str:
@@ -144,63 +153,92 @@ def fetch_teams(bond_id: int, s_code: str) -> str:
     return _fetch_page("/web/teams", {"d": bond_id, "s": s_code})
 
 
-def parse_jaarprogramma(html: str) -> list[TeambeheerFixture]:
+def parse_team_page(html: str) -> list[TeamFixture]:
+    """/web/team?d=<bond>&t=<team>&s=<seizoen> — het volledige programma van
+    dit ene team (competitie én beker door elkaar), dus geen filterstap
+    nodig. De pagina gebruikt het responsive "computer only row"-patroon
+    meerdere keren (ook voor bv. de menubalk) — we doorzoeken daarom ALLE
+    ".computer"-secties tot de juiste (met een "Wedstrijden"-koptekst)
+    gevonden is, in plaats van blind de eerste te pakken. Leest bewust geen
+    tablet/mobiel-secties: die tonen dezelfde wedstrijden nog eens met
+    afgekapte datums en zonder stabiele id, en zouden alles dus laten
+    dubbeltellen."""
     soup = BeautifulSoup(html, "html.parser")
-    fixtures: list[TeambeheerFixture] = []
 
-    for table in soup.find_all("table"):
-        classes = table.get("class") or []
-        if "unstackable" not in classes:
+    table = None
+    for section in soup.find_all("div", class_="computer"):
+        # Niet via `string=`: dat vereist dat de tag precies één platte-
+        # tekst-kind heeft, en faalt stilletjes zodra er bv. een icoontje
+        # naast de koptekst staat (<h2><i class="..."></i>Wedstrijden</h2>)
+        # — dan is `.string` None ook al toont de kop gewoon "Wedstrijden".
+        # get_text() werkt wel door zulke geneste tags heen.
+        header = next(
+            (h for h in section.find_all(["h1", "h2", "h3", "h4"]) if "Wedstrijden" in h.get_text()),
+            None,
+        )
+        if header:
+            table = header.find_next("table")
+            break
+    if not table:
+        return []
+
+    tbody = table.find("tbody")
+    if not tbody:
+        return []
+
+    fixtures: list[TeamFixture] = []
+    for row in tbody.find_all("tr", recursive=False):
+        cells = row.find_all("td", recursive=False)
+        if len(cells) < 4:
             continue
 
-        parent = table.find_parent("div", class_="column")
-        header = parent.find("h4") if parent else table.find_previous("h4")
-        if not header:
+        official_id_raw = cells[0].get("title")
+        if not official_id_raw:
             continue
-        week_match = SPEELWEEK_RE.search(header.get_text(strip=True))
-        if not week_match:
+        try:
+            official_id = int(official_id_raw)
+        except ValueError:
             continue
-        speelweek = int(week_match.group(1))
+        ronde = cells[0].get_text(strip=True)
 
-        tbody = table.find("tbody")
-        if not tbody:
+        datum_raw = cells[1].get_text(strip=True)
+        thuis_a = cells[2].find("a")
+        uit_a = cells[3].find("a")
+        if not thuis_a or not uit_a:
+            # Een "Vrije week" (bye) in de bekerpoule: geen echte wedstrijd.
+            continue
+        thuis_id = _team_id_from_href(thuis_a.get("href", ""))
+        uit_id = _team_id_from_href(uit_a.get("href", ""))
+        if thuis_id is None or uit_id is None:
             continue
 
-        for row in tbody.find_all("tr", recursive=False):
-            cells = row.find_all("td", recursive=False)
-            if len(cells) < 3:
-                continue
-
-            datum_raw = cells[0].get_text(strip=True)
-            thuis_a = cells[1].find("a")
-            uit_a = cells[2].find("a")
-            if not thuis_a or not uit_a:
-                continue
-            thuis_id = _team_id_from_href(thuis_a.get("href", ""))
-            uit_id = _team_id_from_href(uit_a.get("href", ""))
-            if thuis_id is None or uit_id is None:
-                continue
-            score_cell = cells[3] if len(cells) > 3 else None
-            score = score_cell.get_text(strip=True) if score_cell else ""
-            score_a = score_cell.find("a") if score_cell else None
+        score_cell = cells[4] if len(cells) > 4 else None
+        score_a = score_cell.find("a") if score_cell else None
+        if score_a:
+            score = score_a.get_text(strip=True)
             score_url = (
-                f"{settings.TEAMBEHEER_BASE_URL}{score_a['href']}"
-                if score_a and score_a.get("href")
-                else None
+                f"{settings.TEAMBEHEER_BASE_URL}{score_a['href']}" if score_a.get("href") else None
             )
+        else:
+            # Een niet-bevestigde of handmatig ingevulde score zonder
+            # wedstrijdformulier is gewoon platte tekst (geen win/verlies-badge).
+            score = score_cell.get_text(strip=True) if score_cell else ""
+            score_url = None
 
-            fixtures.append(
-                TeambeheerFixture(
-                    speelweek=speelweek,
-                    datum_raw=datum_raw,
-                    thuis_id=thuis_id,
-                    thuis_naam=thuis_a.get_text(strip=True),
-                    uit_id=uit_id,
-                    uit_naam=uit_a.get_text(strip=True),
-                    score=score,
-                    score_url=score_url,
-                )
+        fixtures.append(
+            TeamFixture(
+                official_id=official_id,
+                ronde=ronde,
+                is_beker=ronde.lower().startswith("b"),
+                datum_raw=datum_raw,
+                thuis_id=thuis_id,
+                thuis_naam=thuis_a.get_text(strip=True),
+                uit_id=uit_id,
+                uit_naam=uit_a.get_text(strip=True),
+                score=score,
+                score_url=score_url,
             )
+        )
 
     return fixtures
 
@@ -284,38 +322,60 @@ def team_venue_addresses(bond_id: int, s_code: str) -> dict[int, str]:
     return {team_id: venue.label for team_id, venue in team_venues(bond_id, s_code).items() if venue.label}
 
 
-def _our_fixtures(fixtures: list[TeambeheerFixture], team_id: int) -> list[TeambeheerFixture]:
-    return [f for f in fixtures if f.thuis_id == team_id or f.uit_id == team_id]
+def _external_id(official_id: int) -> str:
+    """De 'w='-waarde uit /web/wedstrijdformulier is Teambeheer's eigen,
+    wereldwijd unieke wedstrijd-id."""
+    return f"tb-m{official_id}"
 
 
-def _external_id(config: TeambeheerConfig, s_code: str, fixture: TeambeheerFixture) -> str:
-    return f"tb-{config.bond_id}-{s_code}-sw{fixture.speelweek}-{fixture.thuis_id}-{fixture.uit_id}"
+def _lookup_match(db: Session, season_id: int, external_id: str, thuisteam: str, uitteam: str) -> Match | None:
+    """Zoekt eerst op de (nieuwe) team-feed-id, en anders als fallback op
+    season + team-namen — dat vangt wedstrijden die nog met het oude
+    jaarprogramma-schema zijn geïmporteerd en voorkomt dat ze hier als
+    dubbele wedstrijd worden aangemaakt."""
+    match = db.query(Match).filter(Match.external_id == external_id).first()
+    if match:
+        return match
+    return (
+        db.query(Match)
+        .filter(
+            Match.season_id == season_id,
+            Match.thuisteam == thuisteam,
+            Match.uitteam == uitteam,
+            Match.external_id != external_id,
+        )
+        .first()
+    )
 
 
 def preview_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) -> list[dict]:
-    """Haalt de poule op en toont onze wedstrijden zonder iets op te slaan."""
+    """Haalt het volledige programma van dit team op en toont het zonder
+    iets op te slaan."""
     s_code = season_code(season.startjaar)
-    html = fetch_jaarprogramma(config.bond_id, s_code, config.poule)
-    fixtures = _our_fixtures(parse_jaarprogramma(html), config.team_id)
+    html = fetch_team_page(config.bond_id, s_code, config.team_id)
+    fixtures = parse_team_page(html)
     venue_addresses = team_venue_addresses(config.bond_id, s_code)
 
     preview: list[dict] = []
     for fixture in fixtures:
-        datum = resolve_year(fixture.datum_raw, season.startjaar, season.eindjaar)
+        datum = resolve_team_date(fixture.datum_raw)
+        thuisteam = fixture.thuis_naam.strip()
+        uitteam = fixture.uit_naam.strip()
         if datum is None:
             status = "geen_datum"
         else:
-            external_id = _external_id(config, s_code, fixture)
-            exists = db.query(Match.id).filter(Match.external_id == external_id).first()
+            external_id = _external_id(fixture.official_id)
+            exists = _lookup_match(db, season.id, external_id, thuisteam, uitteam)
             status = "bestaand" if exists else "nieuw"
 
         preview.append(
             {
-                "speelweek": fixture.speelweek,
+                "ronde": fixture.ronde,
+                "is_beker": fixture.is_beker,
                 "datum": datum,
                 "datum_raw": fixture.datum_raw,
-                "thuisteam": fixture.thuis_naam.strip(),
-                "uitteam": fixture.uit_naam.strip(),
+                "thuisteam": thuisteam,
+                "uitteam": uitteam,
                 "locatie": venue_addresses.get(fixture.thuis_id),
                 "uitslag": fixture.score.strip() or None,
                 "uitslag_url": fixture.score_url,
@@ -326,14 +386,15 @@ def preview_team_fixtures(db: Session, config: TeambeheerConfig, season: Season)
 
 
 def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) -> dict:
-    """Haalt de poule op en zet nieuwe/gewijzigde wedstrijden in de database.
+    """Haalt het volledige programma van dit team op (competitie én beker)
+    en zet nieuwe/gewijzigde wedstrijden in de database.
 
     Zie functioneel ontwerp v1 sectie 6 (import) en 7 (signaleren van nieuwe/
     gewijzigde wedstrijden via het notificatiecentrum).
     """
     s_code = season_code(season.startjaar)
-    html = fetch_jaarprogramma(config.bond_id, s_code, config.poule)
-    fixtures = _our_fixtures(parse_jaarprogramma(html), config.team_id)
+    html = fetch_team_page(config.bond_id, s_code, config.team_id)
+    fixtures = parse_team_page(html)
     venues = team_venues(config.bond_id, s_code)
 
     created = updated = unchanged = skipped_no_date = 0
@@ -347,18 +408,21 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
             elif fixture.uit_id == config.team_id:
                 resolved_team_naam = fixture.uit_naam.strip()
 
-        datum = resolve_year(fixture.datum_raw, season.startjaar, season.eindjaar)
+        datum = resolve_team_date(fixture.datum_raw)
         thuisteam = fixture.thuis_naam.strip()
         uitteam = fixture.uit_naam.strip()
-        external_id = _external_id(config, s_code, fixture)
+        external_id = _external_id(fixture.official_id)
 
         if datum is None:
-            # Was deze wedstrijd eerder wel gepland en staat hij nu weer op
-            # "n.n.b." (uitgesteld, nieuwe datum nog onbekend)? Dan laten we
-            # de laatst bekende datum staan (die kolom is not-null) maar
-            # zetten 'm zichtbaar op "onbekend" en laten spelers dat weten —
-            # anders blijft de oude datum overal stilletjes als geldig ogen.
-            existing = db.query(Match).filter(Match.external_id == external_id).first()
+            # Was deze wedstrijd eerder wel gepland en staat hij nu weer
+            # zonder (bekende) datum (uitgesteld, nieuwe datum nog
+            # onbekend)? Dan laten we de laatst bekende datum staan (die
+            # kolom is not-null) maar zetten 'm zichtbaar op "onbekend" en
+            # laten spelers dat weten — anders blijft de oude datum overal
+            # stilletjes als geldig ogen.
+            existing = _lookup_match(db, season.id, external_id, thuisteam, uitteam)
+            if existing and existing.external_id != external_id:
+                existing.external_id = external_id
             if existing and not existing.datum_onbekend:
                 existing.datum_onbekend = True
                 # Eerder gegeven "ja"/"nee" sloeg op de (nu vervallen) datum
@@ -382,15 +446,18 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
                 unchanged += 1
             continue
 
-        thuisteam = fixture.thuis_naam.strip()
-        uitteam = fixture.uit_naam.strip()
         venue = venues.get(fixture.thuis_id)
         locatie = venue.label if venue and venue.label else None
         uitslag = fixture.score.strip() or None
         uitslag_url = fixture.score_url
 
-        match = db.query(Match).filter(Match.external_id == external_id).first()
+        match = _lookup_match(db, season.id, external_id, thuisteam, uitteam)
         if match:
+            if match.external_id != external_id:
+                # Was nog geïmporteerd via het oude jaarprogramma-schema —
+                # hernoem naar de nieuwe, stabiele team-feed-id in plaats van
+                # 'm als dubbele wedstrijd aan te maken.
+                match.external_id = external_id
             date_changed = match.datum != datum or match.datum_onbekend
             schedule_changed = (
                 date_changed or match.thuisteam != thuisteam or match.uitteam != uitteam
@@ -452,8 +519,8 @@ def sync_team_fixtures(db: Session, config: TeambeheerConfig, season: Season) ->
         match = Match(
             external_id=external_id,
             season_id=season.id,
-            type=MatchType.COMPETITIE,
-            nummer=f"SW{fixture.speelweek}",
+            type=MatchType.BEKER if fixture.is_beker else MatchType.COMPETITIE,
+            nummer=fixture.ronde,
             datum=datum,
             thuisteam=thuisteam,
             uitteam=uitteam,
