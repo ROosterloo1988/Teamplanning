@@ -112,6 +112,33 @@ def test_diagnose_team_feed_sets_error_on_fetch_failure(monkeypatch):
     assert diag.computer_section_found is False
 
 
+def test_parse_finds_wedstrijden_header_with_icon_inside():
+    # Op de echte server staat er een icoontje náást de koptekst
+    # (<h2><i class="..."></i>Wedstrijden</h2>), waardoor h2.string None is
+    # ook al toont de kop gewoon "Wedstrijden" — get_text() moet dat geval
+    # dus wel vinden, anders faalt de hele parse stilletjes op 0 rijen.
+    html = """
+    <div class="computer only row">
+      <h2 class="ui header"><i class="calendar icon"></i>Wedstrijden</h2>
+      <table><tbody>
+        <tr>
+          <td title="123">1</td>
+          <td>02-09-2026</td>
+          <td><a href="/web/team?d=11&t=3854&s=26-27">Opponent</a></td>
+          <td><a href="/web/team?d=11&t=3852&s=26-27">DE GOUV</a></td>
+          <td></td>
+        </tr>
+      </tbody></table>
+    </div>
+    """
+    diag = TeamFeedDiagnostics(url="https://example.invalid")
+    fixtures = parse_team_page(html, diag)
+    assert diag.wedstrijden_header_found is True
+    assert diag.table_found is True
+    assert len(fixtures) == 1
+    assert fixtures[0].official_id == 123
+
+
 def test_diagnose_team_feed_happy_path(monkeypatch):
     from app.services import teambeheer_team_feed as module
 

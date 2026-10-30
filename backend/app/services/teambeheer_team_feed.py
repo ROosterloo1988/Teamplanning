@@ -102,7 +102,15 @@ def parse_team_page(html: str, diag: TeamFeedDiagnostics) -> list[TeamFixture]:
         return []
     diag.computer_section_found = True
 
-    header = computer_section.find("h2", string=lambda s: bool(s) and "Wedstrijden" in s)
+    # Niet via `string=`: dat vereist dat de tag precies één platte-tekst-
+    # kind heeft, en faalt stilletjes zodra er bv. een icoontje naast de
+    # koptekst staat (<h2><i class="..."></i>Wedstrijden</h2>) — dan is
+    # `.string` None ook al toont de kop gewoon "Wedstrijden". get_text()
+    # werkt wel door zulke geneste tags heen.
+    header = next(
+        (h for h in computer_section.find_all("h2") if "Wedstrijden" in h.get_text()),
+        None,
+    )
     if not header:
         return []
     diag.wedstrijden_header_found = True
