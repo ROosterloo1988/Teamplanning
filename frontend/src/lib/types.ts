@@ -156,3 +156,30 @@ export interface TeambeheerSyncResult {
   skipped_no_date: number;
   team_naam: string | null;
 }
+
+export interface TeamFeedFixturePreview {
+  official_id: number;
+  ronde: string;
+  is_beker: boolean;
+  datum: string | null;
+  datum_raw: string;
+  thuisteam: string;
+  uitteam: string;
+  uitslag: string | null;
+  uitslag_url: string | null;
+}
+
+export interface TeamFeedDiagnosticsOut {
+  url: string;
+  html_length: number;
+  computer_section_found: boolean;
+  wedstrijden_header_found: boolean;
+  table_found: boolean;
+  tbody_found: boolean;
+  raw_row_count: number;
+  skipped_no_title: number;
+  skipped_vrije_week: number;
+  parsed_count: number;
+  error: string | null;
+  fixtures: TeamFeedFixturePreview[];
+}
