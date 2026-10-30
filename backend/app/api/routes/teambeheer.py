@@ -113,6 +113,7 @@ def team_feed_test(season_id: int, db: Session = Depends(get_db)):
         "url": diag.url,
         "html_length": diag.html_length,
         "computer_section_found": diag.computer_section_found,
+        "computer_sections_count": diag.computer_sections_count,
         "wedstrijden_header_found": diag.wedstrijden_header_found,
         "table_found": diag.table_found,
         "tbody_found": diag.tbody_found,
@@ -121,5 +122,6 @@ def team_feed_test(season_id: int, db: Session = Depends(get_db)):
         "skipped_vrije_week": diag.skipped_vrije_week,
         "parsed_count": diag.parsed_count,
         "error": diag.error,
+        "headers_seen": diag.headers_seen,
         "fixtures": fixtures_out,
     }

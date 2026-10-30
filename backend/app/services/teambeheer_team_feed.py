@@ -49,6 +49,7 @@ class TeamFeedDiagnostics:
     url: str
     html_length: int = 0
     computer_section_found: bool = False
+    computer_sections_count: int = 0
     wedstrijden_header_found: bool = False
     table_found: bool = False
     tbody_found: bool = False
@@ -58,6 +59,10 @@ class TeamFeedDiagnostics:
     parsed_count: int = 0
     error: str | None = None
     fixtures: list[TeamFixture] = field(default_factory=list)
+    # Debughulp voor als "Wedstrijden" nergens gevonden wordt: welke
+    # kopteksten (h1-h4) staan er dan wél, zodat we zonder nog een keer de
+    # hele pagina te laten opsturen kunnen zien waar het misgaat.
+    headers_seen: list[str] = field(default_factory=list)
 
 
 def resolve_team_date(datum_raw: str) -> date | None:
@@ -97,21 +102,40 @@ def parse_team_page(html: str, diag: TeamFeedDiagnostics) -> list[TeamFixture]:
     diag.html_length = len(html)
     soup = BeautifulSoup(html, "html.parser")
 
-    computer_section = soup.find("div", class_="computer")
-    if not computer_section:
+    # De pagina gebruikt het responsive "computer only row"/"tablet only
+    # row"/"mobile only row"-patroon meerdere keren op de pagina (bv. ook
+    # voor de menubalk), niet maar één keer — zoeken naar de EERSTE
+    # ".computer"-div is dus niet genoeg; we moeten de ".computer"-sectie
+    # vinden die ook echt de "Wedstrijden"-tabel bevat.
+    computer_sections = soup.find_all("div", class_="computer")
+    if not computer_sections:
         return []
     diag.computer_section_found = True
+    diag.computer_sections_count = len(computer_sections)
 
-    # Niet via `string=`: dat vereist dat de tag precies één platte-tekst-
-    # kind heeft, en faalt stilletjes zodra er bv. een icoontje naast de
-    # koptekst staat (<h2><i class="..."></i>Wedstrijden</h2>) — dan is
-    # `.string` None ook al toont de kop gewoon "Wedstrijden". get_text()
-    # werkt wel door zulke geneste tags heen.
-    header = next(
-        (h for h in computer_section.find_all("h2") if "Wedstrijden" in h.get_text()),
-        None,
-    )
+    computer_section = None
+    header = None
+    for section in computer_sections:
+        # Niet via `string=`: dat vereist dat de tag precies één platte-
+        # tekst-kind heeft, en faalt stilletjes zodra er bv. een icoontje
+        # naast de koptekst staat (<h2><i class="..."></i>Wedstrijden</h2>)
+        # — dan is `.string` None ook al toont de kop gewoon "Wedstrijden".
+        # get_text() werkt wel door zulke geneste tags heen.
+        candidate = next(
+            (h for h in section.find_all(["h1", "h2", "h3", "h4"]) if "Wedstrijden" in h.get_text()),
+            None,
+        )
+        if candidate:
+            computer_section = section
+            header = candidate
+            break
+
     if not header:
+        diag.headers_seen = [
+            h.get_text(strip=True)
+            for section in computer_sections
+            for h in section.find_all(["h1", "h2", "h3", "h4"])
+        ][:20]
         return []
     diag.wedstrijden_header_found = True
 
