@@ -21,7 +21,7 @@ class TeambeheerConfigOut(TeambeheerConfigUpdate):
 
 
 class TeambeheerFixturePreview(BaseModel):
-    ronde: str
+    speelweek: int
     datum: date | None
     datum_raw: str
     thuisteam: str
