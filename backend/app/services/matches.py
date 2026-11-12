@@ -56,6 +56,8 @@ def merge_matches(db: Session, keep: Match, duplicate: Match) -> Match:
     for field in ("locatie", "uitslag", "uitslag_url", "nummer", "dartconnect_url"):
         if getattr(keep, field) is None and getattr(duplicate, field) is not None:
             setattr(keep, field, getattr(duplicate, field))
+            if field == "dartconnect_url":
+                keep.dartconnect_completed = duplicate.dartconnect_completed
 
     # external_id is unique, dus eerst los van de dubbele wedstrijd maken
     # voordat 'm op de overgebleven wedstrijd gezet wordt — zonder deze

@@ -146,7 +146,7 @@ export default function SpelerPage() {
           )}
           {next.match.dartconnect_url && (
             <p className="mt-1">
-              <DartConnectLink url={next.match.dartconnect_url} uitslag={next.match.uitslag} />
+              <DartConnectLink url={next.match.dartconnect_url} completed={next.match.dartconnect_completed} />
             </p>
           )}
 

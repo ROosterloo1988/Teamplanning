@@ -79,7 +79,7 @@ export default function CaptainMatchesPage() {
               </span>
               {match.dartconnect_url && (
                 <span className="text-sm">
-                  <DartConnectLink url={match.dartconnect_url} uitslag={match.uitslag} />
+                  <DartConnectLink url={match.dartconnect_url} completed={match.dartconnect_completed} />
                 </span>
               )}
             </Link>
