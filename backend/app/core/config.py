@@ -48,12 +48,15 @@ class Settings(BaseSettings):
     DARTCONNECT_TV_BASE_URL: str = "https://tv.dartconnect.com"
     DARTCONNECT_RECAP_BASE_URL: str = "https://recap.dartconnect.com"
     DARTCONNECT_AUTO_SYNC: bool = True
-    # Competitieavonden beginnen rond 19:00-21:00 — buiten dat venster hoeft
-    # er niet elk kwartier gecheckt te worden of een wedstrijd live is. Een
-    # handmatige "Ververs nu" op Beheer > Teambeheer werkt daarbuiten gewoon.
+    # Competitieavonden beginnen rond 19:00-21:00, maar een wedstrijd kan tot
+    # ver na 21:00 doorlopen — het venster loopt daarom door tot 01:00, zodat
+    # de overgang naar de recap-link (zodra de wedstrijd echt afgelopen is)
+    # ook automatisch gebeurt. Eindigt END_HOUR < START_HOUR (zoals hier),
+    # dan loopt het venster door tot na middernacht. Buiten dit venster werkt
+    # een handmatige "Ververs nu" op Beheer > Teambeheer gewoon.
     DARTCONNECT_SYNC_MINUTES: int = 15
     DARTCONNECT_SYNC_WINDOW_START_HOUR: int = 19
-    DARTCONNECT_SYNC_WINDOW_END_HOUR: int = 21
+    DARTCONNECT_SYNC_WINDOW_END_HOUR: int = 1
 
 
 settings = Settings()

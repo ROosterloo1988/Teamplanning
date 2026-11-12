@@ -129,6 +129,13 @@ def run_response_reminders() -> None:
         db.close()
 
 
+def _hour_range_cron(start_hour: int, end_hour: int) -> str:
+    """bv. 19, 1 -> "19-23,0-1" (loopt door tot na middernacht)."""
+    if start_hour <= end_hour:
+        return f"{start_hour}-{end_hour}"
+    return f"{start_hour}-23,0-{end_hour}"
+
+
 def start_scheduler() -> None:
     if settings.TEAMBEHEER_AUTO_SYNC:
         scheduler.add_job(
@@ -143,7 +150,9 @@ def start_scheduler() -> None:
         scheduler.add_job(
             run_dartconnect_sync,
             "cron",
-            hour=f"{settings.DARTCONNECT_SYNC_WINDOW_START_HOUR}-{settings.DARTCONNECT_SYNC_WINDOW_END_HOUR}",
+            hour=_hour_range_cron(
+                settings.DARTCONNECT_SYNC_WINDOW_START_HOUR, settings.DARTCONNECT_SYNC_WINDOW_END_HOUR
+            ),
             minute=f"*/{settings.DARTCONNECT_SYNC_MINUTES}",
             # Wedstrijden beginnen 's avonds op lokale (Nederlandse) tijd —
             # los van de UTC-standaardtijdzone van de scheduler zelf, anders

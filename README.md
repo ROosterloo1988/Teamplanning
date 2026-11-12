@@ -124,9 +124,12 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
   `tv.dartconnect.com/league/DeSDCC/...`) — de poule die daar al voor
   Teambeheer staat, wordt hergebruikt om de juiste divisie te vinden. Een
   achtergrondtaak zoekt dan elke 15 minuten (`DARTCONNECT_SYNC_MINUTES`),
-  maar alleen tussen 19:00 en 21:00 Nederlandse tijd
-  (`DARTCONNECT_SYNC_WINDOW_START_HOUR`/`_END_HOUR` — wanneer
-  competitieavonden beginnen), op datum + teamnamen of een wedstrijd op
+  maar alleen tussen 19:00 en 01:00 Nederlandse tijd
+  (`DARTCONNECT_SYNC_WINDOW_START_HOUR`/`_END_HOUR` — competitieavonden
+  beginnen rond 19:00-21:00, maar een wedstrijd kan tot ver daarna
+  doorlopen, dus het venster loopt door tot na middernacht zodat ook de
+  overgang naar de recap-link automatisch gebeurt), op datum + teamnamen
+  of een wedstrijd op
   DartConnect live gescoord wordt, en zet zo ja een "📺 Live volgen"-knop
   (wordt na afloop vanzelf "📺 Bekijk recap") bij Speler/Captain en in de
   Wedstrijdhistorie. Niet elke wedstrijd staat op DartConnect — alleen wat
