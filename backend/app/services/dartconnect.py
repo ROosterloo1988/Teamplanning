@@ -98,49 +98,100 @@ def _csrf_headers(client: httpx.Client) -> dict[str, str]:
     raise DartConnectFetchError("Geen CSRF-token ontvangen van DartConnect")
 
 
-def fetch_league_matches(league: str) -> list[DartConnectMatch]:
+def _post_json(client: httpx.Client, url: str, body: dict, headers: dict[str, str]) -> dict:
+    response = client.post(url, json=body, headers=headers, timeout=20)
+    response.raise_for_status()
+    return response.json()
+
+
+def _find_division_id(data: dict, poule: str) -> int | None:
+    poule_l = poule.strip().lower()
+    for div in data.get("divisions") or []:
+        if (div.get("label") or "").strip().lower() == poule_l:
+            return div.get("id")
+    return None
+
+
+def _entries_from_section(section) -> list[dict]:
+    """De /matches-respons groepeert per sectie (reg/post_completed/
+    post_break) eerst op divisie- of bekernaam en dan op datum/ronde — twee
+    niveaus diep. Zonder divisiefilter geeft DartConnect alleen een deel van
+    de divisies terug (zie `fetch_league_matches`); met een divisiefilter
+    wordt een niet-van-toepassing-zijnde sectie dan weer een lege lijst in
+    plaats van een dict — dat negeren we hier gewoon."""
+    if not isinstance(section, dict):
+        return []
+    entries: list[dict] = []
+    for by_date in section.values():
+        if not isinstance(by_date, dict):
+            continue
+        for group in by_date.values():
+            if isinstance(group, list):
+                entries.extend(group)
+    return entries
+
+
+def fetch_league_matches(league: str, poule: str | None = None) -> list[DartConnectMatch]:
     """Haalt alle wedstrijden op (reguliere competitie + bekerrondes: lopend,
     live en afgerond) voor deze DartConnect-liga-slug, bv. "DeSDCC". Niet
     elke wedstrijd staat hierin — alleen wat DartConnect daadwerkelijk live
     gescoord heeft of nog gaat scoren.
 
-    Combineert bewust twee endpoints: een wedstrijd die op dit moment live
-    gescoord wordt, staat nog niet in de reguliere /matches-lijst (die toont
-    alleen al afgeronde rondes) — die moet apart via /matches/live worden
-    opgehaald, anders mist een koppeling precies tijdens de wedstrijd zelf.
+    Zonder divisiefilter geeft /api/league/<league>/matches maar een
+    beperkt deel van de divisies terug in "reg" (welke precies lijkt
+    willekeurig / aan de weergave van de site gebonden, niet aan wat er
+    echt bestaat) — onze eigen divisie (`poule`, bv. "1A") ontbrak daarin
+    stelselmatig, ook al staan er wel degelijk afgeronde wedstrijden in.
+    Daarom, als `poule` is opgegeven: eerst ongefilterd ophalen (voor de
+    bekerdata in post_completed/post_break, en de lijst van divisies), dan
+    de bijbehorende divisie-id opzoeken en de call herhalen met
+    `division_id` gezet — dat geeft voor die ene divisie wél alle
+    afgeronde wedstrijden.
+
+    Combineert daarnaast altijd ook /matches/live: een wedstrijd die op dit
+    moment live gescoord wordt, staat nog niet in de reguliere /matches-
+    lijst (die toont alleen al afgeronde rondes) — die moet apart
+    opgehaald worden, anders mist een koppeling precies tijdens de
+    wedstrijd zelf.
     """
     with httpx.Client(follow_redirects=True) as client:
         headers = _csrf_headers(client)
         try:
-            response = client.post(
-                f"{settings.DARTCONNECT_TV_BASE_URL}/api/league/{league}/matches",
-                json={},
-                headers=headers,
-                timeout=20,
-            )
-            response.raise_for_status()
-            data = response.json()
+            matches_url = f"{settings.DARTCONNECT_TV_BASE_URL}/api/league/{league}/matches"
+            data = _post_json(client, matches_url, {}, headers)
 
-            live_response = client.post(
-                f"{settings.DARTCONNECT_TV_BASE_URL}/api/league/{league}/matches/live",
-                json={},
-                headers=headers,
-                timeout=20,
+            division_data = None
+            if poule:
+                division_id = _find_division_id(data, poule)
+                if division_id is not None:
+                    division_data = _post_json(
+                        client, matches_url, {"division_id": division_id, "competitor_id": None}, headers
+                    )
+
+            live_data = _post_json(
+                client, f"{settings.DARTCONNECT_TV_BASE_URL}/api/league/{league}/matches/live", {}, headers
             )
-            live_response.raise_for_status()
-            live_data = live_response.json()
         except httpx.HTTPError as exc:
             raise DartConnectFetchError(f"Kon DartConnect-liga niet ophalen: {exc}") from exc
 
     matches: list[DartConnectMatch] = []
-    for section_key in ("reg", "post_completed", "post_break"):
-        section = data.get(section_key) or {}
-        for by_date in section.values():
-            for entries in by_date.values():
-                for entry in entries:
-                    dc = _match_from_entry(entry)
-                    if dc:
-                        matches.append(dc)
+
+    # post_completed/post_break (bekerrondes) staan los van een divisie en
+    # komen dus altijd uit de ongefilterde call.
+    for section_key in ("post_completed", "post_break"):
+        for entry in _entries_from_section(data.get(section_key)):
+            dc = _match_from_entry(entry)
+            if dc:
+                matches.append(dc)
+
+    # reg (reguliere competitie): bij voorkeur de divisie-gefilterde call
+    # (compleet voor onze eigen divisie), anders terugvallen op wat de
+    # ongefilterde call toevallig al meegaf.
+    reg_source = division_data if division_data is not None else data
+    for entry in _entries_from_section(reg_source.get("reg")):
+        dc = _match_from_entry(entry)
+        if dc:
+            matches.append(dc)
 
     for live_entry in live_data.get("matches") or []:
         dc = _match_from_entry(live_entry.get("league_match") or {})
@@ -225,7 +276,7 @@ def sync_dartconnect_links(db: Session, config: TeambeheerConfig, season: Season
     datum + teamnamen) met onze eigen wedstrijden in dit seizoen, en vult
     `dartconnect_url` in waar die nog ontbreekt of veranderd is (bv. een
     wedstrijd die net live gescoord begon te worden)."""
-    dc_matches = fetch_league_matches(config.dartconnect_league)
+    dc_matches = fetch_league_matches(config.dartconnect_league, config.poule)
 
     matches = db.query(Match).filter(Match.season_id == season.id).all()
     checked = updated = 0
