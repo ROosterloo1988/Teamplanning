@@ -2,11 +2,18 @@
 
 DartConnect (https://tv.dartconnect.com) scoort sommige wedstrijden live —
 niet per se alle poules, en alleen als iemand bij de wedstrijd de
-live-scoring daadwerkelijk aanzet. Als een wedstrijd daar getrackt wordt,
-is er een permanente link
-(https://recap.dartconnect.com/matches/<dc_match_id>) die tijdens de
-wedstrijd live bijwerkt en erna gewoon de recap toont — dezelfde URL voor
-beide, dus geen onderscheid tussen "live"- en "recap"-link nodig.
+live-scoring daadwerkelijk aanzet: de meeste wedstrijden staan er dus
+helemaal niet op, dat is geen bug maar hoe DartConnect werkt.
+
+Een wedstrijd die NU live loopt, heeft zijn eigen live-kijkpagina
+(https://tv.dartconnect.com/live/<spectator_key>/<type>/<league>/<season_id>)
+— dat is wat je als speler wil tijdens de wedstrijd. Zodra de wedstrijd is
+afgelopen, bestaat die pagina niet meer (de spectator_key hoort bij de
+live-sessie), en gebruiken we in plaats daarvan de permanente recap-link
+(https://recap.dartconnect.com/matches/<dc_match_id>). Vandaar dat we hier
+altijd zowel de lopende/live wedstrijden (/matches/live, geeft de
+spectator_key) als de afgeronde (/matches, geeft alleen dc_match_id)
+ophalen.
 
 Authenticatie is een publieke, accountloze CSRF-cookie-dans (Laravel
 Sanctum): eerst GET /sanctum/csrf-cookie, dan het XSRF-TOKEN-cookie als
@@ -44,6 +51,10 @@ class DartConnectMatch:
     home_name: str
     away_name: str
     completed: bool
+    # Alleen gezet voor een wedstrijd die NU live gescoord wordt (komt uit
+    # /matches/live) — de echte live-kijklink, hoort bij de live-sessie en
+    # is dus niet geldig meer zodra de wedstrijd afgelopen is.
+    live_url: str | None = None
 
 
 def _parse_date(raw: str | None) -> date | None:
@@ -133,8 +144,18 @@ def fetch_league_matches(league: str) -> list[DartConnectMatch]:
 
     for live_entry in live_data.get("matches") or []:
         dc = _match_from_entry(live_entry.get("league_match") or {})
-        if dc:
-            matches.append(dc)
+        if not dc:
+            continue
+        spectator_key = live_entry.get("spectator_key")
+        match_type = live_entry.get("match_type")
+        event_id = live_entry.get("event_id")
+        season_id = live_entry.get("season_id")
+        if spectator_key and match_type and event_id and season_id:
+            dc.live_url = (
+                f"{settings.DARTCONNECT_TV_BASE_URL}/live/{spectator_key}/{match_type}/"
+                f"{event_id}/{season_id}"
+            )
+        matches.append(dc)
 
     return matches
 
@@ -212,7 +233,9 @@ def sync_dartconnect_links(db: Session, config: TeambeheerConfig, season: Season
         checked += 1
         found = _find_match(dc_matches, match.datum, match.thuisteam, match.uitteam)
         if found and found.dc_match_id:
-            new_url = recap_url(found.dc_match_id)
+            new_url = found.live_url if (not found.completed and found.live_url) else recap_url(
+                found.dc_match_id
+            )
             if match.dartconnect_url != new_url or match.dartconnect_completed != found.completed:
                 match.dartconnect_url = new_url
                 match.dartconnect_completed = found.completed
