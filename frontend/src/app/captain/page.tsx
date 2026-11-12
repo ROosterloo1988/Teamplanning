@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { MatchOut, MatchReminderOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
-import { formatMatchDate, DatumOnbekendBadge } from "@/components/StatusBadge";
+import { formatMatchDate, DartConnectLink, DatumOnbekendBadge } from "@/components/StatusBadge";
 
 export default function CaptainMatchesPage() {
   const { user, loading } = useAuth();
@@ -77,6 +77,11 @@ export default function CaptainMatchesPage() {
               <span className="font-medium">
                 {match.thuisteam} - {match.uitteam}
               </span>
+              {match.dartconnect_url && (
+                <span className="text-sm">
+                  <DartConnectLink url={match.dartconnect_url} uitslag={match.uitslag} />
+                </span>
+              )}
             </Link>
           </li>
         ))}

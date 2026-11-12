@@ -6,11 +6,13 @@ from app.db.session import get_db
 from app.models.season import Season
 from app.models.teambeheer import TeambeheerConfig
 from app.schemas.teambeheer import (
+    DartConnectSyncResult,
     TeambeheerConfigOut,
     TeambeheerConfigUpdate,
     TeambeheerFixturePreview,
     TeambeheerSyncResult,
 )
+from app.services.dartconnect import DartConnectFetchError, sync_dartconnect_links
 from app.services.teambeheer import TeambeheerFetchError, preview_team_fixtures, sync_team_fixtures
 
 router = APIRouter(prefix="/teambeheer", tags=["teambeheer"], dependencies=[Depends(require_beheer)])
@@ -49,6 +51,7 @@ def upsert_config(season_id: int, payload: TeambeheerConfigUpdate, db: Session =
     config.bond_id = payload.bond_id
     config.poule = payload.poule
     config.team_id = payload.team_id
+    config.dartconnect_league = payload.dartconnect_league
     db.commit()
     db.refresh(config)
     return config
@@ -73,5 +76,23 @@ def sync_now(season_id: int, db: Session = Depends(get_db)):
     except TeambeheerFetchError as exc:
         config.last_sync_status = "error"
         config.last_sync_message = str(exc)
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+
+
+@router.post("/dartconnect-sync/{season_id}", response_model=DartConnectSyncResult)
+def dartconnect_sync_now(season_id: int, db: Session = Depends(get_db)):
+    season = _get_season(db, season_id)
+    config = _get_config(db, season_id)
+    if not config.dartconnect_league:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nog geen DartConnect-liga ingesteld voor dit seizoen",
+        )
+    try:
+        return sync_dartconnect_links(db, config, season)
+    except DartConnectFetchError as exc:
+        config.last_dartconnect_sync_status = "error"
+        config.last_dartconnect_sync_message = str(exc)
         db.commit()
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc

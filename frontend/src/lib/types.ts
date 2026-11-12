@@ -40,6 +40,7 @@ export interface MatchOut {
   locatie: string | null;
   uitslag: string | null;
   uitslag_url: string | null;
+  dartconnect_url: string | null;
   status: MatchStatus;
 }
 
@@ -129,10 +130,20 @@ export interface TeambeheerConfigOut {
   bond_id: number;
   poule: string;
   team_id: number;
+  dartconnect_league: string | null;
   team_naam: string | null;
   last_synced_at: string | null;
   last_sync_status: string | null;
   last_sync_message: string | null;
+  last_dartconnect_sync_at: string | null;
+  last_dartconnect_sync_status: string | null;
+  last_dartconnect_sync_message: string | null;
+}
+
+export interface DartConnectSyncResult {
+  checked: number;
+  matched: number;
+  updated: number;
 }
 
 export type TeambeheerFixtureStatus = "nieuw" | "bestaand" | "geen_datum";

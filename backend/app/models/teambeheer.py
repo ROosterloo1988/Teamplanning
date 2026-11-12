@@ -25,5 +25,12 @@ class TeambeheerConfig(Base):
     last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_sync_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
     last_sync_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # DartConnect-ligaslug (bv. "DeSDCC"), zoals in https://tv.dartconnect.com/league/<slug>/...
+    # Optioneel: leeg laten betekent gewoon geen DartConnect-koppeling voor
+    # dit seizoen. Zie app/services/dartconnect.py.
+    dartconnect_league: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    last_dartconnect_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_dartconnect_sync_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    last_dartconnect_sync_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     season: Mapped["Season"] = relationship()

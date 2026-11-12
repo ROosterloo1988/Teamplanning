@@ -7,7 +7,7 @@ import { api, ApiError } from "@/lib/api";
 import { MatchOut, MatchType, SeasonOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
 import { BeheerNav } from "@/components/BeheerNav";
-import { DatumOnbekendBadge, formatMatchDate, LocatieLink } from "@/components/StatusBadge";
+import { DartConnectLink, DatumOnbekendBadge, formatMatchDate, LocatieLink } from "@/components/StatusBadge";
 
 const TYPE_LABELS: Record<MatchType, string> = {
   COMPETITIE: "Competitie",
@@ -22,6 +22,7 @@ interface MatchForm {
   uitteam: string;
   locatie: string;
   uitslag: string;
+  dartconnect_url: string;
   type: MatchType;
   nummer: string;
   season_id: string;
@@ -33,6 +34,7 @@ const EMPTY_FORM: MatchForm = {
   uitteam: "",
   locatie: "",
   uitslag: "",
+  dartconnect_url: "",
   type: "COMPETITIE",
   nummer: "",
   season_id: "",
@@ -123,6 +125,7 @@ export default function BeheerWedstrijdenPage() {
       uitteam: match.uitteam,
       locatie: match.locatie ?? "",
       uitslag: match.uitslag ?? "",
+      dartconnect_url: match.dartconnect_url ?? "",
       type: match.type,
       nummer: match.nummer ?? "",
       season_id: match.season_id ? String(match.season_id) : "",
@@ -173,6 +176,7 @@ export default function BeheerWedstrijdenPage() {
         uitteam: editForm.uitteam,
         locatie: editForm.locatie || null,
         uitslag: editForm.uitslag || null,
+        dartconnect_url: editForm.dartconnect_url || null,
         type: editForm.type,
         nummer: editForm.nummer || null,
         season_id: editForm.season_id ? Number(editForm.season_id) : null,
@@ -248,6 +252,12 @@ export default function BeheerWedstrijdenPage() {
                 placeholder="Uitslag (bv. 7-2, optioneel)"
                 value={editForm.uitslag}
                 onChange={(e) => setEditForm({ ...editForm, uitslag: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2"
+              />
+              <input
+                placeholder="DartConnect-link (optioneel, meestal automatisch gevuld)"
+                value={editForm.dartconnect_url}
+                onChange={(e) => setEditForm({ ...editForm, dartconnect_url: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2"
               />
               <select
@@ -334,6 +344,11 @@ export default function BeheerWedstrijdenPage() {
                 {m.locatie && (
                   <div className="mt-0.5">
                     <LocatieLink locatie={m.locatie} />
+                  </div>
+                )}
+                {m.dartconnect_url && (
+                  <div className="mt-0.5">
+                    <DartConnectLink url={m.dartconnect_url} uitslag={m.uitslag} />
                   </div>
                 )}
                 {mergingId === m.id && (

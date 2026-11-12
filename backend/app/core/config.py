@@ -42,5 +42,13 @@ class Settings(BaseSettings):
     TEAMBEHEER_SYNC_HOUR: int = 3
     TEAMBEHEER_SYNC_MINUTE: int = 30
 
+    # DartConnect: live/recap-link per wedstrijd, zie app/services/dartconnect.py.
+    # Leeg laten bij een seizoen (TeambeheerConfig.dartconnect_league) betekent
+    # gewoon geen koppeling — niet elke poule wordt live gescoord.
+    DARTCONNECT_TV_BASE_URL: str = "https://tv.dartconnect.com"
+    DARTCONNECT_RECAP_BASE_URL: str = "https://recap.dartconnect.com"
+    DARTCONNECT_AUTO_SYNC: bool = True
+    DARTCONNECT_SYNC_MINUTES: int = 15
+
 
 settings = Settings()
