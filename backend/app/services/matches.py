@@ -53,7 +53,7 @@ def merge_matches(db: Session, keep: Match, duplicate: Match) -> Match:
 
     # Alleen aanvullen wat op de wedstrijd die je houdt nog leeg is — een
     # waarde die daar al staat (ook als die afwijkt) blijft met rust.
-    for field in ("locatie", "uitslag", "uitslag_url", "nummer"):
+    for field in ("locatie", "uitslag", "uitslag_url", "nummer", "dartconnect_url"):
         if getattr(keep, field) is None and getattr(duplicate, field) is not None:
             setattr(keep, field, getattr(duplicate, field))
 

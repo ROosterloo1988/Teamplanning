@@ -8,6 +8,7 @@ import { AvailabilityOut, AvailabilityStatus, LineupOut, MatchOut } from "@/lib/
 import { Nav } from "@/components/Nav";
 import {
   daysUntil,
+  DartConnectLink,
   DatumOnbekendBadge,
   formatMatchDate,
   formatMatchDateShort,
@@ -141,6 +142,11 @@ export default function SpelerPage() {
           {next.match.locatie && (
             <p className="mt-2">
               <LocatieLink locatie={next.match.locatie} />
+            </p>
+          )}
+          {next.match.dartconnect_url && (
+            <p className="mt-1">
+              <DartConnectLink url={next.match.dartconnect_url} uitslag={next.match.uitslag} />
             </p>
           )}
 

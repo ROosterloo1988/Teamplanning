@@ -7,6 +7,7 @@ class TeambeheerConfigUpdate(BaseModel):
     bond_id: int
     poule: str
     team_id: int
+    dartconnect_league: str | None = None
 
 
 class TeambeheerConfigOut(TeambeheerConfigUpdate):
@@ -18,6 +19,15 @@ class TeambeheerConfigOut(TeambeheerConfigUpdate):
     last_synced_at: datetime | None
     last_sync_status: str | None
     last_sync_message: str | None
+    last_dartconnect_sync_at: datetime | None
+    last_dartconnect_sync_status: str | None
+    last_dartconnect_sync_message: str | None
+
+
+class DartConnectSyncResult(BaseModel):
+    checked: int
+    matched: int
+    updated: int
 
 
 class TeambeheerFixturePreview(BaseModel):

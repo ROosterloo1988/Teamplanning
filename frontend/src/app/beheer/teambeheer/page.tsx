@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { api, ApiError } from "@/lib/api";
 import {
+  DartConnectSyncResult,
   SeasonOut,
   TeambeheerConfigOut,
   TeambeheerFixturePreview,
@@ -35,7 +36,7 @@ export default function BeheerTeambeheerPage() {
   const [seasons, setSeasons] = useState<SeasonOut[]>([]);
   const [seasonId, setSeasonId] = useState<number | null>(null);
   const [config, setConfig] = useState<TeambeheerConfigOut | null>(null);
-  const [form, setForm] = useState({ bond_id: "11", poule: "", team_id: "" });
+  const [form, setForm] = useState({ bond_id: "11", poule: "", team_id: "", dartconnect_league: "" });
   const [preview, setPreview] = useState<TeambeheerFixturePreview[] | null>(null);
   const [syncResult, setSyncResult] = useState<TeambeheerSyncResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,19 +44,29 @@ export default function BeheerTeambeheerPage() {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [dartconnectSyncResult, setDartconnectSyncResult] = useState<DartConnectSyncResult | null>(null);
+  const [dartconnectError, setDartconnectError] = useState<string | null>(null);
+  const [dartconnectSyncing, setDartconnectSyncing] = useState(false);
 
   const loadConfig = useCallback(async (sid: number) => {
     setPreview(null);
     setSyncResult(null);
     setError(null);
+    setDartconnectSyncResult(null);
+    setDartconnectError(null);
     try {
       const data = await api.get<TeambeheerConfigOut>(`/teambeheer/config/${sid}`);
       setConfig(data);
-      setForm({ bond_id: String(data.bond_id), poule: data.poule, team_id: String(data.team_id) });
+      setForm({
+        bond_id: String(data.bond_id),
+        poule: data.poule,
+        team_id: String(data.team_id),
+        dartconnect_league: data.dartconnect_league ?? "",
+      });
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setConfig(null);
-        setForm({ bond_id: "11", poule: "", team_id: "" });
+        setForm({ bond_id: "11", poule: "", team_id: "", dartconnect_league: "" });
       } else {
         throw err;
       }
@@ -101,6 +112,7 @@ export default function BeheerTeambeheerPage() {
         bond_id: Number(form.bond_id),
         poule: form.poule,
         team_id: Number(form.team_id),
+        dartconnect_league: form.dartconnect_league || null,
       });
       setConfig(updated);
     } catch (err) {
@@ -138,6 +150,22 @@ export default function BeheerTeambeheerPage() {
       setError(err instanceof ApiError ? err.message : "Importeren mislukt");
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function handleDartconnectSync() {
+    if (!seasonId) return;
+    setDartconnectError(null);
+    setDartconnectSyncing(true);
+    try {
+      const result = await api.post<DartConnectSyncResult>(`/teambeheer/dartconnect-sync/${seasonId}`);
+      setDartconnectSyncResult(result);
+      const refreshed = await api.get<TeambeheerConfigOut>(`/teambeheer/config/${seasonId}`);
+      setConfig(refreshed);
+    } catch (err) {
+      setDartconnectError(err instanceof ApiError ? err.message : "Verversen mislukt");
+    } finally {
+      setDartconnectSyncing(false);
     }
   }
 
@@ -204,6 +232,23 @@ export default function BeheerTeambeheerPage() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2"
           />
         </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            DartConnect-liga (optioneel)
+          </label>
+          <input
+            placeholder="bv. DeSDCC"
+            value={form.dartconnect_league}
+            onChange={(e) => setForm({ ...form, dartconnect_league: e.target.value })}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2"
+          />
+          <p className="mt-1 text-xs text-gray-400">
+            Uit de URL van jullie DartConnect-liga, bv.{" "}
+            <span className="font-mono">tv.dartconnect.com/league/DeSDCC/...</span> → "DeSDCC". Niet
+            elke wedstrijd staat op DartConnect — alleen degene die daadwerkelijk live gescoord
+            worden. Leeg laten betekent: geen live/recap-links.
+          </p>
+        </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -233,6 +278,38 @@ export default function BeheerTeambeheerPage() {
           )}
           {config.last_sync_message && (
             <p className="mt-1 text-gray-500">{config.last_sync_message}</p>
+          )}
+        </div>
+      )}
+
+      {config && config.dartconnect_league && (
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 text-sm">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="font-medium">📺 DartConnect ({config.dartconnect_league})</p>
+            <button
+              onClick={handleDartconnectSync}
+              disabled={dartconnectSyncing}
+              className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {dartconnectSyncing ? "Bezig..." : "Ververs nu"}
+            </button>
+          </div>
+          {config.last_dartconnect_sync_at ? (
+            <p className="text-gray-500">
+              Laatste check: {formatTimestamp(config.last_dartconnect_sync_at)}
+              {config.last_dartconnect_sync_status === "error" ? " — ⚠️ mislukt" : ""}
+            </p>
+          ) : (
+            <p className="text-gray-400">Nog niet eerder gecontroleerd.</p>
+          )}
+          {config.last_dartconnect_sync_message && (
+            <p className="mt-1 text-gray-500">{config.last_dartconnect_sync_message}</p>
+          )}
+          {dartconnectError && <p className="mt-1 text-red-600">{dartconnectError}</p>}
+          {dartconnectSyncResult && (
+            <p className="mt-1 text-green-700">
+              ✅ {dartconnectSyncResult.updated} link(s) bijgewerkt.
+            </p>
           )}
         </div>
       )}

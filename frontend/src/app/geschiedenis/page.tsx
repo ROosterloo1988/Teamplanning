@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { LineupOut, MatchOut, SeasonOut } from "@/lib/types";
 import { Nav } from "@/components/Nav";
-import { formatMatchDate, LocatieLink } from "@/components/StatusBadge";
+import { DartConnectLink, formatMatchDate, LocatieLink } from "@/components/StatusBadge";
 
 export default function GeschiedenisPage() {
   const { user, loading } = useAuth();
@@ -133,6 +133,11 @@ export default function GeschiedenisPage() {
               {expanded === match.id && (
                 <div className="space-y-2 border-t border-gray-100 bg-gray-50 px-4 py-3 text-sm">
                   {match.locatie && <LocatieLink locatie={match.locatie} />}
+                  {match.dartconnect_url && (
+                    <div>
+                      <DartConnectLink url={match.dartconnect_url} uitslag={match.uitslag} />
+                    </div>
+                  )}
                   {!lineup && <p className="text-gray-400">Laden...</p>}
                   {lineup && lineup.published && lineup.player_naam.length > 0 && (
                     <p>

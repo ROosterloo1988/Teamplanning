@@ -119,6 +119,17 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
 - Een ingebouwde nachtelijke achtergrondtaak doet dit automatisch voor elk
   gekoppeld seizoen en meldt nieuwe of gewijzigde wedstrijden via het
   notificatiecentrum — uit te zetten met `TEAMBEHEER_AUTO_SYNC=false`.
+- **DartConnect live/recap-link**: vul bij **Beheer → Teambeheer** optioneel
+  de DartConnect-ligaslug in (bv. "DeSDCC", uit
+  `tv.dartconnect.com/league/DeSDCC/...`). Een achtergrondtaak zoekt dan elke
+  15 minuten (`DARTCONNECT_SYNC_MINUTES`) op datum + teamnamen of een
+  wedstrijd op DartConnect live gescoord wordt, en zet zo ja een
+  "📺 Live volgen"-knop (wordt na afloop vanzelf "📺 Bekijk recap") bij
+  Speler/Captain en in de Wedstrijdhistorie. Niet elke wedstrijd staat op
+  DartConnect — alleen wat daadwerkelijk live gescoord wordt — dus deze knop
+  verschijnt niet overal. Handmatig verversen kan met de "Ververs nu"-knop
+  op Beheer → Teambeheer, of de link is bij **Beheer → Wedstrijden** ook
+  gewoon met de hand in te vullen/te overschrijven.
 
 Excel-import en -verschilcontrole zijn uit het ontwerp geschrapt — met de
 Teambeheer-sync als bron voor wedstrijden is dat niet meer nodig. De app is

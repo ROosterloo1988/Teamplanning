@@ -18,6 +18,7 @@ from app.models.match import Match
 from app.models.notification import Notification
 from app.models.season import Season
 from app.models.teambeheer import TeambeheerConfig
+from app.services.dartconnect import DartConnectFetchError, sync_dartconnect_links
 from app.services.notifications import send_response_reminders
 from app.services.teambeheer import TeambeheerFetchError, sync_team_fixtures
 
@@ -46,6 +47,33 @@ def run_nightly_sync() -> None:
                 db.commit()
             except Exception:
                 logger.exception("Onverwachte fout bij Teambeheer-sync voor seizoen %s", season.naam)
+                db.rollback()
+    finally:
+        db.close()
+
+
+def run_dartconnect_sync() -> None:
+    """Zoekt, voor elk seizoen met een DartConnect-liga ingesteld, naar
+    live/recap-links voor onze wedstrijden. Draait vaker dan de nachtelijke
+    Teambeheer-sync (zie DARTCONNECT_SYNC_MINUTES) omdat een link juist
+    tijdens een lopende wedstrijd relevant is."""
+    db = SessionLocal()
+    try:
+        configs = db.query(TeambeheerConfig).filter(TeambeheerConfig.dartconnect_league.isnot(None)).all()
+        for config in configs:
+            season = db.get(Season, config.season_id)
+            if not season:
+                continue
+            try:
+                sync_dartconnect_links(db, config, season)
+            except DartConnectFetchError as exc:
+                logger.warning("DartConnect-sync mislukt voor seizoen %s: %s", season.naam, exc)
+                db.rollback()
+                config.last_dartconnect_sync_status = "error"
+                config.last_dartconnect_sync_message = str(exc)
+                db.commit()
+            except Exception:
+                logger.exception("Onverwachte fout bij DartConnect-sync voor seizoen %s", season.naam)
                 db.rollback()
     finally:
         db.close()
@@ -109,6 +137,14 @@ def start_scheduler() -> None:
             hour=settings.TEAMBEHEER_SYNC_HOUR,
             minute=settings.TEAMBEHEER_SYNC_MINUTE,
             id="teambeheer_nightly_sync",
+            replace_existing=True,
+        )
+    if settings.DARTCONNECT_AUTO_SYNC:
+        scheduler.add_job(
+            run_dartconnect_sync,
+            "interval",
+            minutes=settings.DARTCONNECT_SYNC_MINUTES,
+            id="dartconnect_sync",
             replace_existing=True,
         )
     scheduler.add_job(

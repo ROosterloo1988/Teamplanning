@@ -29,6 +29,11 @@ class Match(Base):
     locatie: Mapped[str | None] = mapped_column(String(120), nullable=True)
     uitslag: Mapped[str | None] = mapped_column(String(20), nullable=True)
     uitslag_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Link naar DartConnect (live tijdens de wedstrijd, erna gewoon de recap
+    # — zelfde URL). Automatisch gevuld door de DartConnect-achtergrondtaak
+    # (zie app/services/dartconnect.py), maar ook handmatig te zetten/te
+    # overschrijven via Beheer > Wedstrijden.
+    dartconnect_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     status: Mapped[MatchStatus] = mapped_column(Enum(MatchStatus), default=MatchStatus.GEPLAND, nullable=False)
 
     season: Mapped["Season"] = relationship(back_populates="matches")

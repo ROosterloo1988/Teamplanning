@@ -61,6 +61,25 @@ export function DatumOnbekendBadge() {
   );
 }
 
+// Link naar DartConnect (live tijdens de wedstrijd, erna de recap — zelfde
+// URL, alleen het label verandert). `uitslag` als simpele indicator of de
+// wedstrijd al gespeeld is: zolang Teambeheer nog geen eindstand heeft
+// doorgegeven, is de wedstrijd nog bezig (of moet nog beginnen).
+export function DartConnectLink({ url, uitslag }: { url: string | null; uitslag: string | null }) {
+  if (!url) return null;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-brand hover:underline"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {uitslag ? "📺 Bekijk recap" : "📺 Live volgen"}
+    </a>
+  );
+}
+
 export function mapsUrl(locatie: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locatie)}`;
 }
