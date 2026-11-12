@@ -43,6 +43,7 @@ class DartConnectMatch:
     sched_date: date | None
     home_name: str
     away_name: str
+    completed: bool
 
 
 def _parse_date(raw: str | None) -> date | None:
@@ -151,6 +152,10 @@ def _match_from_entry(entry: dict) -> DartConnectMatch | None:
         sched_date=_parse_date(entry.get("sched_date")),
         home_name=(left.get("team_name") or "").strip(),
         away_name=(right.get("team_name") or "").strip(),
+        # "C" = Completed. Alles anders (bv. "A" = Active) betekent: nog
+        # bezig of nog niet begonnen — zolang DartConnect 'm al wel kent
+        # (dc_match_id gezet) is dat dus "live".
+        completed=entry.get("status") == "C",
     )
 
 
@@ -158,22 +163,40 @@ def recap_url(dc_match_id: str) -> str:
     return f"{settings.DARTCONNECT_RECAP_BASE_URL}/matches/{dc_match_id}"
 
 
+# Teambeheer en DartConnect registreren de datum van dezelfde wedstrijd niet
+# altijd exact hetzelfde (in de praktijk tot een dag verschil, bv. bij een
+# bekerronde) — op exacte datumgelijkheid matchen liet zulke wedstrijden dan
+# stilletjes ongekoppeld. In plaats daarvan: op teamnamen matchen en, als er
+# meerdere datums voor hetzelfde teampaar in de buurt liggen, de dichtstbije
+# nemen — twee teams spelen elkaar normaal niet twee keer binnen een paar
+# dagen, dus dit blijft ondubbelzinnig.
+MAX_DATE_DIFF_DAYS = 3
+
+
 def _find_match(
     dc_matches: list[DartConnectMatch], datum: date, thuisteam: str, uitteam: str
 ) -> DartConnectMatch | None:
     thuisteam_l, uitteam_l = thuisteam.strip().lower(), uitteam.strip().lower()
+    best: DartConnectMatch | None = None
+    best_diff: int | None = None
     for dc in dc_matches:
-        if dc.sched_date != datum or not dc.dc_match_id:
+        if not dc.dc_match_id or dc.sched_date is None:
             continue
         home_l, away_l = dc.home_name.lower(), dc.away_name.lower()
         # Thuis/uit kan in andere volgorde staan dan bij ons (bv. een
         # verzette wedstrijd op de oorspronkelijke thuislocatie) — op
         # teamnamen matchen, niet op thuis/uit-positie.
-        if (home_l == thuisteam_l and away_l == uitteam_l) or (
-            home_l == uitteam_l and away_l == thuisteam_l
+        if not (
+            (home_l == thuisteam_l and away_l == uitteam_l)
+            or (home_l == uitteam_l and away_l == thuisteam_l)
         ):
-            return dc
-    return None
+            continue
+        diff = abs((dc.sched_date - datum).days)
+        if diff > MAX_DATE_DIFF_DAYS:
+            continue
+        if best_diff is None or diff < best_diff:
+            best, best_diff = dc, diff
+    return best
 
 
 def sync_dartconnect_links(db: Session, config: TeambeheerConfig, season: Season) -> dict:
@@ -190,8 +213,9 @@ def sync_dartconnect_links(db: Session, config: TeambeheerConfig, season: Season
         found = _find_match(dc_matches, match.datum, match.thuisteam, match.uitteam)
         if found and found.dc_match_id:
             new_url = recap_url(found.dc_match_id)
-            if match.dartconnect_url != new_url:
+            if match.dartconnect_url != new_url or match.dartconnect_completed != found.completed:
                 match.dartconnect_url = new_url
+                match.dartconnect_completed = found.completed
                 updated += 1
 
     matched = sum(1 for m in matches if m.dartconnect_url)

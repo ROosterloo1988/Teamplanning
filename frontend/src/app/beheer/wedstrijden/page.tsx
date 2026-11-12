@@ -348,7 +348,7 @@ export default function BeheerWedstrijdenPage() {
                 )}
                 {m.dartconnect_url && (
                   <div className="mt-0.5">
-                    <DartConnectLink url={m.dartconnect_url} uitslag={m.uitslag} />
+                    <DartConnectLink url={m.dartconnect_url} completed={m.dartconnect_completed} />
                   </div>
                 )}
                 {mergingId === m.id && (

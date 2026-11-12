@@ -62,10 +62,11 @@ export function DatumOnbekendBadge() {
 }
 
 // Link naar DartConnect (live tijdens de wedstrijd, erna de recap — zelfde
-// URL, alleen het label verandert). `uitslag` als simpele indicator of de
-// wedstrijd al gespeeld is: zolang Teambeheer nog geen eindstand heeft
-// doorgegeven, is de wedstrijd nog bezig (of moet nog beginnen).
-export function DartConnectLink({ url, uitslag }: { url: string | null; uitslag: string | null }) {
+// URL, alleen het label verandert). `completed` komt rechtstreeks van
+// DartConnect's eigen status, niet van onze `uitslag` — Teambeheer kan al
+// een (tussen)stand doorgeven terwijl de wedstrijd op DartConnect nog
+// gewoon live loopt.
+export function DartConnectLink({ url, completed }: { url: string | null; completed: boolean }) {
   if (!url) return null;
   return (
     <a
@@ -75,7 +76,7 @@ export function DartConnectLink({ url, uitslag }: { url: string | null; uitslag:
       className="text-brand hover:underline"
       onClick={(e) => e.stopPropagation()}
     >
-      {uitslag ? "📺 Bekijk recap" : "📺 Live volgen"}
+      {completed ? "📺 Bekijk recap" : "📺 Live volgen"}
     </a>
   );
 }

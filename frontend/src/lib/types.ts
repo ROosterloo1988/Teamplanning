@@ -41,6 +41,7 @@ export interface MatchOut {
   uitslag: string | null;
   uitslag_url: string | null;
   dartconnect_url: string | null;
+  dartconnect_completed: boolean;
   status: MatchStatus;
 }
 

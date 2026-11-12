@@ -18,6 +18,7 @@ class MatchBase(BaseModel):
     uitslag: str | None = None
     uitslag_url: str | None = None
     dartconnect_url: str | None = None
+    dartconnect_completed: bool = False
     status: MatchStatus = MatchStatus.GEPLAND
 
 
@@ -38,6 +39,7 @@ class MatchUpdate(BaseModel):
     uitslag: str | None = None
     uitslag_url: str | None = None
     dartconnect_url: str | None = None
+    dartconnect_completed: bool | None = None
     status: MatchStatus | None = None
 
 

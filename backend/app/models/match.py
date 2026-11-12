@@ -34,6 +34,11 @@ class Match(Base):
     # (zie app/services/dartconnect.py), maar ook handmatig te zetten/te
     # overschrijven via Beheer > Wedstrijden.
     dartconnect_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Komt rechtstreeks van DartConnect's eigen status (niet van onze eigen
+    # `uitslag` — Teambeheer kan al een tussenstand doorgeven terwijl de
+    # wedstrijd op DartConnect nog gewoon live loopt). Bepaalt alleen het
+    # label ("Live volgen" vs "Bekijk recap"); de link zelf blijft hetzelfde.
+    dartconnect_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     status: Mapped[MatchStatus] = mapped_column(Enum(MatchStatus), default=MatchStatus.GEPLAND, nullable=False)
 
     season: Mapped["Season"] = relationship(back_populates="matches")

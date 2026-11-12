@@ -135,7 +135,7 @@ export default function GeschiedenisPage() {
                   {match.locatie && <LocatieLink locatie={match.locatie} />}
                   {match.dartconnect_url && (
                     <div>
-                      <DartConnectLink url={match.dartconnect_url} uitslag={match.uitslag} />
+                      <DartConnectLink url={match.dartconnect_url} completed={match.dartconnect_completed} />
                     </div>
                   )}
                   {!lineup && <p className="text-gray-400">Laden...</p>}
