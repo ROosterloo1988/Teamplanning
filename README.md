@@ -121,14 +121,19 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
   notificatiecentrum — uit te zetten met `TEAMBEHEER_AUTO_SYNC=false`.
 - **DartConnect live/recap-link**: vul bij **Beheer → Teambeheer** optioneel
   de DartConnect-ligaslug in (bv. "DeSDCC", uit
-  `tv.dartconnect.com/league/DeSDCC/...`). Een achtergrondtaak zoekt dan elke
-  15 minuten (`DARTCONNECT_SYNC_MINUTES`) op datum + teamnamen of een
-  wedstrijd op DartConnect live gescoord wordt, en zet zo ja een
-  "📺 Live volgen"-knop (wordt na afloop vanzelf "📺 Bekijk recap") bij
-  Speler/Captain en in de Wedstrijdhistorie. Niet elke wedstrijd staat op
-  DartConnect — alleen wat daadwerkelijk live gescoord wordt — dus deze knop
-  verschijnt niet overal. Handmatig verversen kan met de "Ververs nu"-knop
-  op Beheer → Teambeheer, of de link is bij **Beheer → Wedstrijden** ook
+  `tv.dartconnect.com/league/DeSDCC/...`) — de poule die daar al voor
+  Teambeheer staat, wordt hergebruikt om de juiste divisie te vinden. Een
+  achtergrondtaak zoekt dan elke 15 minuten (`DARTCONNECT_SYNC_MINUTES`),
+  maar alleen tussen 19:00 en 21:00 Nederlandse tijd
+  (`DARTCONNECT_SYNC_WINDOW_START_HOUR`/`_END_HOUR` — wanneer
+  competitieavonden beginnen), op datum + teamnamen of een wedstrijd op
+  DartConnect live gescoord wordt, en zet zo ja een "📺 Live volgen"-knop
+  (wordt na afloop vanzelf "📺 Bekijk recap") bij Speler/Captain en in de
+  Wedstrijdhistorie. Niet elke wedstrijd staat op DartConnect — alleen wat
+  daadwerkelijk live gescoord wordt — dus deze knop verschijnt niet overal.
+  Buiten dat avondvenster (of voor een wedstrijd die al afgelopen is) werkt
+  handmatig verversen met de "Ververs nu"-knop op Beheer → Teambeheer
+  gewoon, of de link is bij **Beheer → Wedstrijden** ook
   gewoon met de hand in te vullen/te overschrijven.
 
 Excel-import en -verschilcontrole zijn uit het ontwerp geschrapt — met de

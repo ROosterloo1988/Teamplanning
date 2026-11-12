@@ -142,8 +142,13 @@ def start_scheduler() -> None:
     if settings.DARTCONNECT_AUTO_SYNC:
         scheduler.add_job(
             run_dartconnect_sync,
-            "interval",
-            minutes=settings.DARTCONNECT_SYNC_MINUTES,
+            "cron",
+            hour=f"{settings.DARTCONNECT_SYNC_WINDOW_START_HOUR}-{settings.DARTCONNECT_SYNC_WINDOW_END_HOUR}",
+            minute=f"*/{settings.DARTCONNECT_SYNC_MINUTES}",
+            # Wedstrijden beginnen 's avonds op lokale (Nederlandse) tijd —
+            # los van de UTC-standaardtijdzone van de scheduler zelf, anders
+            # schuift dit venster mee met zomer-/wintertijd.
+            timezone="Europe/Amsterdam",
             id="dartconnect_sync",
             replace_existing=True,
         )

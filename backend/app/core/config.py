@@ -48,7 +48,12 @@ class Settings(BaseSettings):
     DARTCONNECT_TV_BASE_URL: str = "https://tv.dartconnect.com"
     DARTCONNECT_RECAP_BASE_URL: str = "https://recap.dartconnect.com"
     DARTCONNECT_AUTO_SYNC: bool = True
+    # Competitieavonden beginnen rond 19:00-21:00 — buiten dat venster hoeft
+    # er niet elk kwartier gecheckt te worden of een wedstrijd live is. Een
+    # handmatige "Ververs nu" op Beheer > Teambeheer werkt daarbuiten gewoon.
     DARTCONNECT_SYNC_MINUTES: int = 15
+    DARTCONNECT_SYNC_WINDOW_START_HOUR: int = 19
+    DARTCONNECT_SYNC_WINDOW_END_HOUR: int = 21
 
 
 settings = Settings()
