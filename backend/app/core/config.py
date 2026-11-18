@@ -57,6 +57,12 @@ class Settings(BaseSettings):
     DARTCONNECT_SYNC_MINUTES: int = 15
     DARTCONNECT_SYNC_WINDOW_START_HOUR: int = 19
     DARTCONNECT_SYNC_WINDOW_END_HOUR: int = 1
+    # Vlak na de start van een competitieavond begint een wedstrijd het
+    # vaakst pas live te lopen — de eerste FAST_WINDOW_MINUTES na
+    # WINDOW_START_HOUR syncen we daarom elke FAST_MINUTES in plaats van
+    # elke DARTCONNECT_SYNC_MINUTES, zie `run_dartconnect_sync`.
+    DARTCONNECT_SYNC_FAST_MINUTES: int = 5
+    DARTCONNECT_SYNC_FAST_WINDOW_MINUTES: int = 90
 
 
 settings = Settings()

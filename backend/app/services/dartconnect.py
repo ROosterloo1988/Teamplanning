@@ -32,6 +32,7 @@ import httpx
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.models.enums import MatchType
 from app.models.match import Match
 from app.models.season import Season
 from app.models.teambeheer import TeambeheerConfig
@@ -246,13 +247,20 @@ MAX_DATE_DIFF_DAYS = 3
 
 
 def _find_match(
-    dc_matches: list[DartConnectMatch], datum: date, thuisteam: str, uitteam: str
+    dc_matches: list[DartConnectMatch],
+    datum: date,
+    thuisteam: str,
+    uitteam: str,
+    *,
+    ignore_date: bool = False,
+    exclude_ids: set[int] | None = None,
 ) -> DartConnectMatch | None:
     thuisteam_l, uitteam_l = thuisteam.strip().lower(), uitteam.strip().lower()
-    best: DartConnectMatch | None = None
-    best_diff: int | None = None
+    candidates: list[tuple[int, DartConnectMatch]] = []
     for dc in dc_matches:
         if not dc.dc_match_id or dc.sched_date is None:
+            continue
+        if exclude_ids is not None and id(dc) in exclude_ids:
             continue
         home_l, away_l = dc.home_name.lower(), dc.away_name.lower()
         # Thuis/uit kan in andere volgorde staan dan bij ons (bv. een
@@ -263,33 +271,74 @@ def _find_match(
             or (home_l == uitteam_l and away_l == thuisteam_l)
         ):
             continue
+        if ignore_date:
+            candidates.append((0, dc))
+            continue
         diff = abs((dc.sched_date - datum).days)
         if diff > MAX_DATE_DIFF_DAYS:
             continue
-        if best_diff is None or diff < best_diff:
-            best, best_diff = dc, diff
-    return best
+        candidates.append((diff, dc))
+
+    if not candidates:
+        return None
+    if ignore_date:
+        # Datum laten we alleen helemaal los als er voor dit teampaar nog
+        # precies één (nog niet aan een andere wedstrijd gekoppelde)
+        # kandidaat overblijft — spelen de teams elkaar dit seizoen twee
+        # keer (heen/terug), dan is het zonder datum niet te onderscheiden
+        # welke van de twee het is, en matchen we liever niet dan verkeerd.
+        return candidates[0][1] if len(candidates) == 1 else None
+    return min(candidates, key=lambda c: c[0])[1]
+
+
+def _apply_match(match: Match, found: DartConnectMatch) -> bool:
+    new_url = found.live_url if (not found.completed and found.live_url) else recap_url(found.dc_match_id)
+    if match.dartconnect_url == new_url and match.dartconnect_completed == found.completed:
+        return False
+    match.dartconnect_url = new_url
+    match.dartconnect_completed = found.completed
+    return True
 
 
 def sync_dartconnect_links(db: Session, config: TeambeheerConfig, season: Season) -> dict:
     """Doorzoekt de DartConnect-liga op wedstrijden die overeenkomen (op
     datum + teamnamen) met onze eigen wedstrijden in dit seizoen, en vult
     `dartconnect_url` in waar die nog ontbreekt of veranderd is (bv. een
-    wedstrijd die net live gescoord begon te worden)."""
+    wedstrijd die net live gescoord begon te worden).
+
+    Tweede ronde: een COMPETITIE-wedstrijd die verzet is naar een andere
+    datum dan waarop DartConnect 'm nog heeft staan (die datum wordt daar
+    niet bijgewerkt) wordt in de eerste ronde gemist door het
+    datumverschil. Voor wat na ronde 1 nog ongekoppeld is, proberen we het
+    daarom nogmaals zonder datum — alleen voor COMPETITIE (bekerrondes
+    staan al los van een divisie en matchen prima binnen de normale
+    datumtolerantie) en alleen als dat voor dat teampaar ondubbelzinnig is.
+    """
     dc_matches = fetch_league_matches(config.dartconnect_league, config.poule)
 
     matches = db.query(Match).filter(Match.season_id == season.id).all()
     checked = updated = 0
+    used_ids: set[int] = set()
+    unmatched: list[Match] = []
     for match in matches:
         checked += 1
         found = _find_match(dc_matches, match.datum, match.thuisteam, match.uitteam)
-        if found and found.dc_match_id:
-            new_url = found.live_url if (not found.completed and found.live_url) else recap_url(
-                found.dc_match_id
-            )
-            if match.dartconnect_url != new_url or match.dartconnect_completed != found.completed:
-                match.dartconnect_url = new_url
-                match.dartconnect_completed = found.completed
+        if found:
+            used_ids.add(id(found))
+            if _apply_match(match, found):
+                updated += 1
+        else:
+            unmatched.append(match)
+
+    for match in unmatched:
+        if match.type != MatchType.COMPETITIE:
+            continue
+        found = _find_match(
+            dc_matches, match.datum, match.thuisteam, match.uitteam, ignore_date=True, exclude_ids=used_ids
+        )
+        if found:
+            used_ids.add(id(found))
+            if _apply_match(match, found):
                 updated += 1
 
     matched = sum(1 for m in matches if m.dartconnect_url)

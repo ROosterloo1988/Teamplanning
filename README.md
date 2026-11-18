@@ -123,17 +123,25 @@ Zie `docs/functioneel-ontwerp-v1.md` voor het volledige functioneel ontwerp.
   de DartConnect-ligaslug in (bv. "DeSDCC", uit
   `tv.dartconnect.com/league/DeSDCC/...`) — de poule die daar al voor
   Teambeheer staat, wordt hergebruikt om de juiste divisie te vinden. Een
-  achtergrondtaak zoekt dan elke 15 minuten (`DARTCONNECT_SYNC_MINUTES`),
-  maar alleen tussen 19:00 en 01:00 Nederlandse tijd
-  (`DARTCONNECT_SYNC_WINDOW_START_HOUR`/`_END_HOUR` — competitieavonden
-  beginnen rond 19:00-21:00, maar een wedstrijd kan tot ver daarna
-  doorlopen, dus het venster loopt door tot na middernacht zodat ook de
-  overgang naar de recap-link automatisch gebeurt), op datum + teamnamen
-  of een wedstrijd op
+  achtergrondtaak zoekt dan op datum + teamnamen of een wedstrijd op
   DartConnect live gescoord wordt, en zet zo ja een "📺 Live volgen"-knop
   (wordt na afloop vanzelf "📺 Bekijk recap") bij Speler/Captain en in de
   Wedstrijdhistorie. Niet elke wedstrijd staat op DartConnect — alleen wat
   daadwerkelijk live gescoord wordt — dus deze knop verschijnt niet overal.
+  Een COMPETITIE-wedstrijd die verzet is naar een andere datum dan
+  DartConnect nog heeft staan, wordt ook gevonden — op teamnamen, zonder
+  datum-eis, maar alleen als dat voor dat teampaar ondubbelzinnig is (dus
+  niet als de teams elkaar dit seizoen twee keer treffen); voor bekerrondes
+  geldt die uitzondering niet, die matchen al binnen de normale
+  datumtolerantie.
+  Deze taak draait alleen tussen 19:00 en 01:00 Nederlandse tijd
+  (`DARTCONNECT_SYNC_WINDOW_START_HOUR`/`_END_HOUR` — competitieavonden
+  beginnen rond 19:00-21:00, maar een wedstrijd kan tot ver daarna
+  doorlopen, dus het venster loopt door tot na middernacht zodat ook de
+  overgang naar de recap-link automatisch gebeurt), en synct de eerste
+  90 minuten daarvan (`DARTCONNECT_SYNC_FAST_WINDOW_MINUTES`) elke 5 minuten
+  (`DARTCONNECT_SYNC_FAST_MINUTES`) — net als een wedstrijd begint is dat
+  het relevantst — en daarna elke 15 minuten (`DARTCONNECT_SYNC_MINUTES`).
   Buiten dat avondvenster (of voor een wedstrijd die al afgelopen is) werkt
   handmatig verversen met de "Ververs nu"-knop op Beheer → Teambeheer
   gewoon, of de link is bij **Beheer → Wedstrijden** ook
