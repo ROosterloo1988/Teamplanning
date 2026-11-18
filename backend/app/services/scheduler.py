@@ -9,6 +9,7 @@ te breken.
 
 import logging
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -52,11 +53,37 @@ def run_nightly_sync() -> None:
         db.close()
 
 
+def _in_dartconnect_fast_window(now: datetime, start_hour: int, fast_window_minutes: int) -> bool:
+    """De eerste FAST_WINDOW_MINUTES na het begin van het sync-venster
+    (meestal het moment dat competitieavonden beginnen) is een wedstrijd
+    het vaakst nog niet of net live — vandaar dat de job daar elke tik
+    (DARTCONNECT_SYNC_FAST_MINUTES) echt synct in plaats van pas elke
+    DARTCONNECT_SYNC_MINUTES, zie `run_dartconnect_sync`."""
+    window_start = now.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+    if now.hour < start_hour:
+        # Venster loopt door middernacht (bv. start 19:00) — dan hoort een
+        # tijdstip na 00:00 nog bij het venster dat gisteravond begon.
+        window_start -= timedelta(days=1)
+    elapsed_minutes = (now - window_start).total_seconds() / 60
+    return 0 <= elapsed_minutes < fast_window_minutes
+
+
 def run_dartconnect_sync() -> None:
     """Zoekt, voor elk seizoen met een DartConnect-liga ingesteld, naar
-    live/recap-links voor onze wedstrijden. Draait vaker dan de nachtelijke
-    Teambeheer-sync (zie DARTCONNECT_SYNC_MINUTES) omdat een link juist
-    tijdens een lopende wedstrijd relevant is."""
+    live/recap-links voor onze wedstrijden. De job tikt de hele
+    DartConnect-sync-venster elke DARTCONNECT_SYNC_FAST_MINUTES, maar
+    buiten het eerste DARTCONNECT_SYNC_FAST_WINDOW_MINUTES ervan (de
+    competitieavond is dan al op gang) doet hij alleen daadwerkelijk iets
+    op de DARTCONNECT_SYNC_MINUTES-cadans — zo zit je er sneller bovenop
+    vlak na de start van een wedstrijd, zonder de rest van de avond
+    onnodig vaak te syncen."""
+    now = datetime.now(ZoneInfo("Europe/Amsterdam"))
+    in_fast_window = _in_dartconnect_fast_window(
+        now, settings.DARTCONNECT_SYNC_WINDOW_START_HOUR, settings.DARTCONNECT_SYNC_FAST_WINDOW_MINUTES
+    )
+    if not in_fast_window and now.minute % settings.DARTCONNECT_SYNC_MINUTES != 0:
+        return
+
     db = SessionLocal()
     try:
         configs = db.query(TeambeheerConfig).filter(TeambeheerConfig.dartconnect_league.isnot(None)).all()
@@ -153,7 +180,10 @@ def start_scheduler() -> None:
             hour=_hour_range_cron(
                 settings.DARTCONNECT_SYNC_WINDOW_START_HOUR, settings.DARTCONNECT_SYNC_WINDOW_END_HOUR
             ),
-            minute=f"*/{settings.DARTCONNECT_SYNC_MINUTES}",
+            # De job tikt op de snelste cadans (DARTCONNECT_SYNC_FAST_MINUTES);
+            # run_dartconnect_sync() zelf bepaalt of een tik buiten het
+            # "fast window" wel of niet echt iets doet.
+            minute=f"*/{settings.DARTCONNECT_SYNC_FAST_MINUTES}",
             # Wedstrijden beginnen 's avonds op lokale (Nederlandse) tijd —
             # los van de UTC-standaardtijdzone van de scheduler zelf, anders
             # schuift dit venster mee met zomer-/wintertijd.
