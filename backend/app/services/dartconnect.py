@@ -258,7 +258,11 @@ def _find_match(
     thuisteam_l, uitteam_l = thuisteam.strip().lower(), uitteam.strip().lower()
     candidates: list[tuple[int, DartConnectMatch]] = []
     for dc in dc_matches:
-        if not dc.dc_match_id or dc.sched_date is None:
+        # Een wedstrijd die nu live gescoord wordt, krijgt pas een
+        # dc_match_id zodra hij is afgerond — tot die tijd is live_url het
+        # enige bruikbare veld. Zonder dit zou elke live wedstrijd hier
+        # genegeerd worden, precies wanneer de link het meest relevant is.
+        if not (dc.dc_match_id or dc.live_url) or dc.sched_date is None:
             continue
         if exclude_ids is not None and id(dc) in exclude_ids:
             continue
@@ -292,7 +296,14 @@ def _find_match(
 
 
 def _apply_match(match: Match, found: DartConnectMatch) -> bool:
-    new_url = found.live_url if (not found.completed and found.live_url) else recap_url(found.dc_match_id)
+    if not found.completed and found.live_url:
+        new_url = found.live_url
+    elif found.dc_match_id:
+        new_url = recap_url(found.dc_match_id)
+    else:
+        # Live wedstrijd zonder live_url (zou niet moeten voorkomen, zie
+        # `fetch_league_matches`) en nog geen dc_match_id — niets bruikbaars.
+        return False
     if match.dartconnect_url == new_url and match.dartconnect_completed == found.completed:
         return False
     match.dartconnect_url = new_url
